@@ -75,9 +75,8 @@ export function useLogin() {
         salt: encryptionData.salt,
       });
 
-      // Navigate first, then disconnect wallet (we only needed it for signing)
+      // Navigate to mailbox — keep wallet connected for compose/drafts
       router.push("/mailbox");
-      setTimeout(() => disconnect(), 100);
     } catch (err: unknown) {
       const error = err as { code?: string | number; message?: string };
       if (error.code === "ACTION_REJECTED" || error.code === 4001) {

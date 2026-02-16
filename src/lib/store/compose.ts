@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 import type { WalletClient } from "viem";
 import type { PersonItem, MailDetail } from "@/lib/constants";
 import { MetaMailType, EMAIL_DOMAIN } from "@/lib/constants";
@@ -567,10 +568,11 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
         mail_decryption_key: mailDecryptionKey,
       });
 
-      // Refresh + close
+      // Refresh + close + notify
       useMailStore.getState().fetchMails();
       useMailStore.getState().fetchStats();
       set({ isOpen: false });
+      toast.success("Mail sent");
     } catch (err: unknown) {
       const error = err as {
         code?: string | number;
@@ -584,9 +586,9 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
       const backendMsg = error.response?.data?.error;
       console.error("Send failed:", err);
       if (backendMsg) console.error("Backend error:", backendMsg);
-      set({
-        sendError: backendMsg || error.message || "Failed to send mail",
-      });
+      const errorMsg = backendMsg || error.message || "Failed to send mail";
+      set({ sendError: errorMsg });
+      toast.error("Send failed", { description: errorMsg });
     } finally {
       set({ sending: false });
     }

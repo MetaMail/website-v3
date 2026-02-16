@@ -50,7 +50,6 @@ export function ComposeMail() {
     sending,
     saving,
     sendError,
-    isDirty,
     lastSavedAt,
     closeCompose,
     setMailTo,
@@ -163,6 +162,23 @@ export function ComposeMail() {
       </div>
 
       <Separator />
+
+      {/* Wallet connect banner */}
+      {!walletClient && (
+        <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
+          <AlertCircle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+          <span className="text-xs text-amber-800 flex-1">
+            Connect your wallet to save drafts and send mail.
+          </span>
+          <ConnectButton.Custom>
+            {({ openConnectModal }) => (
+              <Button onClick={openConnectModal} size="sm" variant="outline" className="h-6 text-xs px-2">
+                Connect
+              </Button>
+            )}
+          </ConnectButton.Custom>
+        </div>
+      )}
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">

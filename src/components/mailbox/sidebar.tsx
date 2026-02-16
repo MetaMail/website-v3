@@ -21,6 +21,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useDisconnect } from "wagmi";
 import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
@@ -56,6 +57,7 @@ function formatFileSize(bytes: number): string {
 
 export function Sidebar({ onCompose, className }: SidebarProps) {
   const router = useRouter();
+  const { disconnect } = useDisconnect();
   const { filter, setFilter, unreadCount, spamCount, draftCount } = useMailStore();
   const { user, clearAuth, emailSize, emailSizeLimit, fetchProfile } = useAuthStore();
 
@@ -70,6 +72,7 @@ export function Sidebar({ onCompose, className }: SidebarProps) {
     : "";
 
   const handleLogout = () => {
+    disconnect();
     clearAuth();
     router.push("/");
   };

@@ -12,6 +12,7 @@ import { Sidebar } from "@/components/mailbox/sidebar";
 import { MailList } from "@/components/mailbox/mail-list";
 import { MailDetail } from "@/components/mailbox/mail-detail";
 import { ComposeMail } from "@/components/mailbox/compose-mail";
+import { Toaster } from "@/components/ui/sonner";
 import { Menu } from "lucide-react";
 
 export default function MailboxPage() {
@@ -88,6 +89,7 @@ export default function MailboxPage() {
         </div>
       </div>
       <ComposeMail />
+      <Toaster position="bottom-right" />
     </TooltipProvider>
   );
 }
