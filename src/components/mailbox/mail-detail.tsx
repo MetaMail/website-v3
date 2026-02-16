@@ -10,6 +10,7 @@ import { useMailStore } from "@/lib/store/mail";
 import { useAuthStore } from "@/lib/store/auth";
 import { useComposeStore } from "@/lib/store/compose";
 import { MetaMailType, MarkType, FilterType, ReadStatus } from "@/lib/constants";
+import { cn, formatSize } from "@/lib/utils";
 import { decryptMail, decryptAttachment } from "@/lib/crypto";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -49,11 +50,6 @@ function formatAddress(person: { name: string; address: string }): string {
   return person.address;
 }
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 function SandboxedHtml({ html }: { html: string }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -368,7 +364,7 @@ export function MailDetail() {
             <Button
               variant="ghost"
               size="icon"
-              className={`h-8 w-8 ${filter === FilterType.Trash ? "text-destructive hover:text-destructive" : ""}`}
+              className={cn("h-8 w-8", filter === FilterType.Trash && "text-destructive hover:text-destructive")}
               aria-label={filter === FilterType.Trash ? "Delete forever" : "Move to trash"}
               disabled={!mail}
               onClick={() => mail && deleteMail(mail)}

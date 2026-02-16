@@ -9,6 +9,7 @@ import { RecipientInput } from "./recipient-input";
 import { useComposeStore } from "@/lib/store/compose";
 import { useAuthStore } from "@/lib/store/auth";
 import { EMAIL_DOMAIN } from "@/lib/constants";
+import { formatSize } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -26,11 +27,6 @@ import {
   Trash2,
 } from "lucide-react";
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export function ComposeMail() {
   const { data: walletClient } = useWalletClient();

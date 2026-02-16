@@ -10,7 +10,7 @@ import {
 import { MailItem, MarkType, MetaMailType, ReadStatus, FilterType } from "@/lib/constants";
 import { useMailStore } from "@/lib/store/mail";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, ShieldCheck, Trash2, AlertCircle } from "lucide-react";
+import { Star, ShieldCheck, Trash2, AlertCircle, Inbox } from "lucide-react";
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
@@ -54,11 +54,12 @@ interface MailListItemProps {
 }
 
 export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: MailListItemProps) {
-  const { selectedMailId, selectMail, toggleStar, deleteMail, filter } = useMailStore();
+  const { selectedMailId, selectMail, toggleStar, deleteMail, moveTo, filter } = useMailStore();
   const isSelected = selectedMailId === mail.message_id;
   const isUnread = mail.read === ReadStatus.Unread;
   const isStarred = mail.mark === MarkType.Starred;
   const isEncrypted = mail.meta_type === MetaMailType.Encrypted;
+  const isSpamOrTrash = filter === FilterType.Spam || filter === FilterType.Trash;
 
   return (
     <div
@@ -87,24 +88,26 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
         />
       </div>
 
-      {/* Star */}
-      <button
-        className="shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        aria-label={isStarred ? "Unstar" : "Star"}
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleStar(mail);
-        }}
-      >
-        <Star
-          className={cn(
-            "h-4 w-4 transition-colors",
-            isStarred
-              ? "fill-yellow-400 text-yellow-400"
-              : "text-muted-foreground/40 hover:text-yellow-400"
-          )}
-        />
-      </button>
+      {/* Star — hidden in Spam/Trash */}
+      {!isSpamOrTrash && (
+        <button
+          className="shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          aria-label={isStarred ? "Unstar" : "Star"}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleStar(mail);
+          }}
+        >
+          <Star
+            className={cn(
+              "h-4 w-4 transition-colors",
+              isStarred
+                ? "fill-yellow-400 text-yellow-400"
+                : "text-muted-foreground/40 hover:text-yellow-400"
+            )}
+          />
+        </button>
+      )}
 
       {/* Content */}
       <div className="flex-1 min-w-0">
@@ -145,12 +148,35 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
           {formatDate(mail.mail_date)}
         </span>
         <div className="absolute right-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          {/* Move to Inbox — shown in Spam and Trash */}
+          {isSpamOrTrash && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  aria-label={filter === FilterType.Spam ? "Not Spam" : "Move to Inbox"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveTo(mail, MarkType.Normal);
+                  }}
+                >
+                  <Inbox className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {filter === FilterType.Spam ? "Not Spam" : "Move to Inbox"}
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {/* Delete */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-7 w-7 ${filter === FilterType.Trash ? "text-destructive hover:text-destructive" : ""}`}
+                className={cn("h-7 w-7", filter === FilterType.Trash && "text-destructive hover:text-destructive")}
                 aria-label={filter === FilterType.Trash ? "Delete Forever" : "Trash"}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -164,7 +190,8 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
               {filter === FilterType.Trash ? "Delete Forever" : "Trash"}
             </TooltipContent>
           </Tooltip>
-          {filter !== FilterType.Trash && (
+          {/* Spam — hidden in Spam and Trash */}
+          {!isSpamOrTrash && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -174,7 +201,7 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
                   aria-label="Spam"
                   onClick={(e) => {
                     e.stopPropagation();
-                    useMailStore.getState().moveTo(mail, MarkType.Spam);
+                    moveTo(mail, MarkType.Spam);
                   }}
                 >
                   <AlertCircle className="h-4 w-4" />

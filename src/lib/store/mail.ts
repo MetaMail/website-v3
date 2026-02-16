@@ -108,6 +108,7 @@ interface MailState {
   batchMarkRead: () => Promise<void>;
   batchMarkUnread: () => Promise<void>;
   batchStar: () => Promise<void>;
+  batchMoveToInbox: () => Promise<void>;
   emptyTrash: () => Promise<void>;
 }
 
@@ -604,6 +605,33 @@ export const useMailStore = create<MailState>((set, get) => ({
       }));
     } catch (err) {
       console.error("Failed to batch star:", err);
+    }
+  },
+
+  batchMoveToInbox: async () => {
+    const { selectedIds, mails } = get();
+    if (selectedIds.size === 0) return;
+
+    const targets = mails.filter((m) => selectedIds.has(m.message_id));
+    const updates = targets.map((m) => ({
+      message_id: m.message_id,
+      mailbox: m.mailbox,
+    }));
+
+    try {
+      await mailApi.updateMailStatus(updates, { mark: MarkType.Normal });
+      targets.forEach((m) => detailCache.delete(mailKey(m)));
+      set((state) => ({
+        mails: state.mails.filter((m) => !selectedIds.has(m.message_id)),
+        total: Math.max(0, state.total - targets.length),
+        selectedIds: new Set(),
+        selectedMailId: selectedIds.has(state.selectedMailId || "") ? null : state.selectedMailId,
+        selectedMailDetail: selectedIds.has(state.selectedMailId || "") ? null : state.selectedMailDetail,
+        mailCache: {},
+      }));
+      get().fetchStats();
+    } catch (err) {
+      console.error("Failed to batch move to inbox:", err);
     }
   },
 

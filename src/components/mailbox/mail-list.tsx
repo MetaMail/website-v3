@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { useMailStore } from "@/lib/store/mail";
 import { MailListItem } from "./mail-list-item";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -132,8 +133,11 @@ export function MailList() {
     batchMarkRead,
     batchMarkUnread,
     batchStar,
+    batchMoveToInbox,
     emptyTrash,
   } = useMailStore();
+
+  const isSpamOrTrash = filter === FilterType.Spam || filter === FilterType.Trash;
 
   const [refreshing, setRefreshing] = useState(false);
   const [localQuery, setLocalQuery] = useState("");
@@ -197,12 +201,6 @@ export function MailList() {
     setSearchOpen(false);
   };
 
-  // Uncomment when search API is ready
-  // const handleOpenSearch = () => {
-  //   setSearchOpen(true);
-  //   requestAnimationFrame(() => inputRef.current?.focus());
-  // };
-
   const isSearchMode = searchQuery !== "";
 
   const hasSelection = selectedIds.size > 0;
@@ -239,9 +237,10 @@ export function MailList() {
       <div className="relative px-4 py-3 border-b min-h-[52px]">
         {/* Batch toolbar — fades in when items are selected */}
         <div
-          className={`flex items-center justify-between transition-opacity duration-150 ${
+          className={cn(
+            "flex items-center justify-between transition-opacity duration-150",
             hasSelection ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
+          )}
         >
           <div className="flex items-center gap-3">
             <Checkbox
@@ -264,6 +263,18 @@ export function MailList() {
             </Button>
           </div>
           <div className="flex items-center gap-0.5">
+            {isSpamOrTrash && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={filter === FilterType.Spam ? "Not Spam" : "Move to Inbox"} onClick={batchMoveToInbox}>
+                    <Inbox className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {filter === FilterType.Spam ? "Not Spam" : "Move to Inbox"}
+                </TooltipContent>
+              </Tooltip>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={filter === FilterType.Trash ? "Delete forever" : "Move to trash"} onClick={batchDelete}>
@@ -274,14 +285,16 @@ export function MailList() {
                 {filter === FilterType.Trash ? "Delete Forever" : "Trash"}
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Star selected" onClick={batchStar}>
-                  <Star className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Star</TooltipContent>
-            </Tooltip>
+            {!isSpamOrTrash && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Star selected" onClick={batchStar}>
+                    <Star className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Star</TooltipContent>
+              </Tooltip>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Mark as read" onClick={batchMarkRead}>
@@ -302,9 +315,10 @@ export function MailList() {
         </div>
         {/* Normal header — fades in when no selection */}
         <div
-          className={`absolute inset-0 flex items-center justify-between px-4 py-3 transition-opacity duration-150 ${
+          className={cn(
+            "absolute inset-0 flex items-center justify-between px-4 py-3 transition-opacity duration-150",
             hasSelection ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
+          )}
         >
           {/* Left side: either search input or title */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -359,22 +373,6 @@ export function MailList() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                {/* Search button — hidden until search API is ready
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      aria-label="Search"
-                      onClick={handleOpenSearch}
-                    >
-                      <Search className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Search</TooltipContent>
-                </Tooltip>
-                */}
               </>
             )}
           </div>
@@ -400,7 +398,7 @@ export function MailList() {
                   disabled={refreshing}
                   onClick={handleRefresh}
                 >
-                  <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin-ease-out" : ""}`} />
+                  <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin-ease-out")} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">Refresh</TooltipContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatSize } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -53,12 +53,6 @@ interface SidebarProps {
   className?: string;
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
 
 export function Sidebar({ onCompose, className }: SidebarProps) {
   const router = useRouter();
@@ -164,7 +158,7 @@ export function Sidebar({ onCompose, className }: SidebarProps) {
               className="h-1.5"
             />
             <p className="text-xs text-muted-foreground mt-1.5">
-              {formatFileSize(emailSize)} of {formatFileSize(emailSizeLimit)}
+              {formatSize(emailSize)} of {formatSize(emailSizeLimit)}
             </p>
           </div>
         </>
