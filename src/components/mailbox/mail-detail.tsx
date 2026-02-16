@@ -257,7 +257,7 @@ export function MailDetail() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar — always static */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b">
+      <div className="flex items-center gap-2 px-4 py-3 border-b min-h-[52px]">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
