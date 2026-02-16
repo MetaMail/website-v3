@@ -14,6 +14,11 @@ import { MetaMailType, MarkType, FilterType, ReadStatus } from "@/lib/constants"
 import { decryptMail, decryptAttachment } from "@/lib/crypto";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   ArrowLeft,
   Loader2,
   Lock,
@@ -253,113 +258,158 @@ export function MailDetail() {
     <div className="flex flex-col h-full">
       {/* Toolbar — always static */}
       <div className="flex items-center gap-2 px-4 py-2 border-b">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          aria-label="Back to mail list"
-          onClick={() => selectMail(null)}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Back to mail list"
+              onClick={() => selectMail(null)}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Back</TooltipContent>
+        </Tooltip>
         <div className="flex-1" />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          aria-label="Reply"
-          disabled={!mail}
-          onClick={() =>
-            mail && useComposeStore
-              .getState()
-              .openCompose({ mode: "reply", replyTo: mail })
-          }
-        >
-          <Reply className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          aria-label="Forward"
-          disabled={!mail}
-          onClick={() =>
-            mail && useComposeStore
-              .getState()
-              .openCompose({ mode: "forward", replyTo: mail })
-          }
-        >
-          <Forward className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Reply"
+              disabled={!mail}
+              onClick={() =>
+                mail && useComposeStore
+                  .getState()
+                  .openCompose({ mode: "reply", replyTo: mail })
+              }
+            >
+              <Reply className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Reply</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Forward"
+              disabled={!mail}
+              onClick={() =>
+                mail && useComposeStore
+                  .getState()
+                  .openCompose({ mode: "forward", replyTo: mail })
+              }
+            >
+              <Forward className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Forward</TooltipContent>
+        </Tooltip>
         {mail?.read === ReadStatus.Unread ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            aria-label="Mark as read"
-            onClick={() => mail && markAsRead(mail)}
-          >
-            <MailCheck className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Mark as read"
+                onClick={() => mail && markAsRead(mail)}
+              >
+                <MailCheck className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Mark Read</TooltipContent>
+          </Tooltip>
         ) : (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            aria-label="Mark as unread"
-            disabled={!mail}
-            onClick={() => mail && markAsUnread(mail)}
-          >
-            <MailOpen className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Mark as unread"
+                disabled={!mail}
+                onClick={() => mail && markAsUnread(mail)}
+              >
+                <MailOpen className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Mark Unread</TooltipContent>
+          </Tooltip>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          aria-label={isStarred ? "Unstar" : "Star"}
-          disabled={!mail}
-          onClick={() => mail && toggleStar(mail)}
-        >
-          <Star
-            className={
-              isStarred
-                ? "h-4 w-4 fill-yellow-400 text-yellow-400"
-                : "h-4 w-4"
-            }
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`h-8 w-8 ${filter === FilterType.Trash ? "text-destructive hover:text-destructive" : ""}`}
-          aria-label={filter === FilterType.Trash ? "Delete forever" : "Move to trash"}
-          disabled={!mail}
-          onClick={() => mail && deleteMail(mail)}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={isStarred ? "Unstar" : "Star"}
+              disabled={!mail}
+              onClick={() => mail && toggleStar(mail)}
+            >
+              <Star
+                className={
+                  isStarred
+                    ? "h-4 w-4 fill-yellow-400 text-yellow-400"
+                    : "h-4 w-4"
+                }
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{isStarred ? "Unstar" : "Star"}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-8 w-8 ${filter === FilterType.Trash ? "text-destructive hover:text-destructive" : ""}`}
+              aria-label={filter === FilterType.Trash ? "Delete forever" : "Move to trash"}
+              disabled={!mail}
+              onClick={() => mail && deleteMail(mail)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{filter === FilterType.Trash ? "Delete Forever" : "Trash"}</TooltipContent>
+        </Tooltip>
         {filter !== FilterType.Trash && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            aria-label="Report spam"
-            disabled={!mail}
-            onClick={() => mail && useMailStore.getState().moveTo(mail, MarkType.Spam)}
-          >
-            <AlertCircle className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Report spam"
+                disabled={!mail}
+                onClick={() => mail && useMailStore.getState().moveTo(mail, MarkType.Spam)}
+              >
+                <AlertCircle className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Spam</TooltipContent>
+          </Tooltip>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          aria-label="Close"
-          onClick={() => selectMail(null)}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Close"
+              onClick={() => selectMail(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Close</TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Mail content */}
