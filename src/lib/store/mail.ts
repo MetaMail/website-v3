@@ -282,8 +282,12 @@ export const useMailStore = create<MailState>((set, get) => ({
       const detail = results?.[0];
       if (!detail) throw new Error("Mail not found");
 
-      detailCache.set(messageId, detail);
-      set({ selectedMailDetail: detail, detailLoading: false });
+      // Preserve client-side mark/read from list item (API may return stale values)
+      const merged = mail
+        ? { ...detail, mark: mail.mark, read: mail.read }
+        : detail;
+      detailCache.set(messageId, merged);
+      set({ selectedMailDetail: merged, detailLoading: false });
 
       if (mail && mail.read === ReadStatus.Unread) {
         get().markAsRead(mail);
