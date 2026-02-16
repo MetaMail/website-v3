@@ -445,7 +445,10 @@ export function MailList() {
             <EmptyState filter={filter} />
           )
         ) : (
-          <div>
+          <div
+            className="animate-in fade-in duration-200"
+            style={{ "--tw-enter-opacity": 0.3 } as React.CSSProperties}
+          >
             {mails.map((mail) => (
               <MailListItem
                 key={mail.message_id}
