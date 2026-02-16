@@ -57,6 +57,9 @@ interface MailState {
   pageCount: number;
   total: number;
 
+  // Search
+  searchQuery: string;
+
   // Mail list
   mails: MailItem[];
   loading: boolean; // true only when no cached data to show
@@ -78,6 +81,8 @@ interface MailState {
   // Actions
   setFilter: (filter: FilterType) => void;
   setPage: (page: number) => void;
+  setSearchQuery: (query: string) => void;
+  clearSearch: () => void;
   fetchMails: () => Promise<void>;
   fetchStats: () => Promise<void>;
   selectMail: (messageId: string | null) => Promise<void>;
@@ -113,6 +118,7 @@ export const useMailStore = create<MailState>((set, get) => ({
   selectedMailDetail: null,
   detailLoading: false,
   selectedIds: new Set<string>(),
+  searchQuery: "",
 
   setFilter: (filter) => {
     const cacheKey = `${filter}:1`;
@@ -120,6 +126,7 @@ export const useMailStore = create<MailState>((set, get) => ({
     set({
       filter,
       pageIndex: 1,
+      searchQuery: "",
       selectedMailId: null,
       selectedMailDetail: null,
       selectedIds: new Set(),
@@ -129,8 +136,41 @@ export const useMailStore = create<MailState>((set, get) => ({
     get().fetchMails();
   },
 
+  setSearchQuery: (query) => {
+    const cacheKey = query
+      ? `search:${query}:${get().filter}:1`
+      : `${get().filter}:1`;
+    const cached = get().mailCache[cacheKey];
+    set({
+      searchQuery: query,
+      pageIndex: 1,
+      selectedMailId: null,
+      selectedMailDetail: null,
+      selectedIds: new Set(),
+      ...(cached ? { mails: cached.mails, pageCount: cached.pageCount, total: cached.total } : {}),
+    });
+    get().fetchMails();
+  },
+
+  clearSearch: () => {
+    const cacheKey = `${get().filter}:1`;
+    const cached = get().mailCache[cacheKey];
+    set({
+      searchQuery: "",
+      pageIndex: 1,
+      selectedMailId: null,
+      selectedMailDetail: null,
+      selectedIds: new Set(),
+      ...(cached ? { mails: cached.mails, pageCount: cached.pageCount, total: cached.total } : {}),
+    });
+    get().fetchMails();
+  },
+
   setPage: (page) => {
-    const cacheKey = `${get().filter}:${page}`;
+    const { filter, searchQuery } = get();
+    const cacheKey = searchQuery
+      ? `search:${searchQuery}:${filter}:${page}`
+      : `${filter}:${page}`;
     const cached = get().mailCache[cacheKey];
     set({
       pageIndex: page,
@@ -141,8 +181,10 @@ export const useMailStore = create<MailState>((set, get) => ({
   },
 
   fetchMails: async () => {
-    const { filter, pageIndex, mailCache } = get();
-    const cacheKey = `${filter}:${pageIndex}`;
+    const { filter, pageIndex, searchQuery, mailCache } = get();
+    const cacheKey = searchQuery
+      ? `search:${searchQuery}:${filter}:${pageIndex}`
+      : `${filter}:${pageIndex}`;
     const hasCached = !!mailCache[cacheKey];
 
     // Only show loading skeleton when there's no cached data to display
@@ -151,7 +193,9 @@ export const useMailStore = create<MailState>((set, get) => ({
     }
 
     try {
-      const res = await mailApi.getMailList(filter, pageIndex);
+      const res = searchQuery
+        ? await mailApi.searchMails(searchQuery, filter, pageIndex)
+        : await mailApi.getMailList(filter, pageIndex);
       const page: CachedPage = {
         mails: res.mails || [],
         pageCount: res.page_num,

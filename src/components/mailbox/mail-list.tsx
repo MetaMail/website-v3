@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useMailStore } from "@/lib/store/mail";
 import { MailListItem } from "./mail-list-item";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,6 +35,7 @@ import {
   FileText,
   AlertCircle,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import { FilterType } from "@/lib/constants";
 
@@ -115,8 +117,11 @@ export function MailList() {
     pageIndex,
     pageCount,
     total,
+    searchQuery,
     setFilter,
     setPage,
+    setSearchQuery,
+    clearSearch,
     fetchMails,
     fetchStats,
     selectedIds,
@@ -131,6 +136,63 @@ export function MailList() {
   } = useMailStore();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [localQuery, setLocalQuery] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync localQuery when store searchQuery is cleared externally (e.g. folder switch)
+  useEffect(() => {
+    if (searchQuery === "" && localQuery !== "") {
+      setLocalQuery("");
+    }
+  }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const debouncedSearch = useCallback(
+    (query: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setSearchQuery(query);
+      }, 400);
+    },
+    [setSearchQuery]
+  );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalQuery(value);
+    if (value.trim()) {
+      debouncedSearch(value.trim());
+    } else {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (searchQuery) clearSearch();
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      const trimmed = localQuery.trim();
+      if (trimmed) {
+        setSearchQuery(trimmed);
+      } else if (searchQuery) {
+        clearSearch();
+      }
+    } else if (e.key === "Escape") {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      setLocalQuery("");
+      if (searchQuery) clearSearch();
+      inputRef.current?.blur();
+    }
+  };
+
+  const handleClearSearch = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setLocalQuery("");
+    clearSearch();
+    inputRef.current?.focus();
+  };
+
+  const isSearchMode = searchQuery !== "";
 
   const hasSelection = selectedIds.size > 0;
   const allSelected = mails.length > 0 && mails.every((m) => selectedIds.has(m.message_id));
@@ -235,7 +297,13 @@ export function MailList() {
               className="h-4 w-4"
               aria-label="Select all messages"
             />
-            <h2 className="text-lg font-semibold">{filterLabels[filter]}</h2>
+            <h2 className="text-lg font-semibold">
+              {isSearchMode ? (
+                <>Search: &ldquo;{searchQuery}&rdquo;</>
+              ) : (
+                filterLabels[filter]
+              )}
+            </h2>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Filter messages">
@@ -292,6 +360,32 @@ export function MailList() {
         </div>
       </div>
 
+      {/* Search bar */}
+      <div className="px-4 py-2 border-b">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            ref={inputRef}
+            value={localQuery}
+            onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Search emails..."
+            className="pl-9 pr-9 h-8"
+          />
+          {localQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7"
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
       {/* Mail list */}
       <ScrollArea className="flex-1">
         {loading ? (
@@ -308,7 +402,15 @@ export function MailList() {
             ))}
           </div>
         ) : mails.length === 0 ? (
-          <EmptyState filter={filter} />
+          isSearchMode ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+              <Search className="h-12 w-12 mb-4 opacity-40" />
+              <p className="text-lg font-medium">No results found</p>
+              <p className="text-sm">Try a different search term</p>
+            </div>
+          ) : (
+            <EmptyState filter={filter} />
+          )
         ) : (
           <div className="animate-in fade-in duration-200">
             {mails.map((mail) => (

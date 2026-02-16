@@ -42,6 +42,20 @@ export const mailApi = {
     });
   },
 
+  searchMails(
+    keyword: string,
+    filter?: FilterType,
+    pageIndex: number = 1,
+    limit: number = 30
+  ): Promise<MailListResponse> {
+    return apiClient.post("/mails/search", {
+      keyword,
+      filter,
+      page_index: pageIndex,
+      limit,
+    });
+  },
+
   getMailDetail(mailId: string): Promise<MailDetail> {
     return apiClient.get("/mails", {
       params: { mail_id: btoa(mailId) },
