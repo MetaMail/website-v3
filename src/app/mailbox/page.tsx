@@ -20,18 +20,20 @@ export default function MailboxPage() {
   const { loadFromStorage, token } = useAuthStore();
   const { selectedMailId } = useMailStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     loadFromStorage();
+    setHydrated(true);
   }, [loadFromStorage]);
 
   useEffect(() => {
-    if (!token) {
+    if (hydrated && !token) {
       router.replace("/");
     }
-  }, [token, router]);
+  }, [hydrated, token, router]);
 
-  if (!token) return null;
+  if (!hydrated || !token) return null;
 
   const handleCompose = () => {
     useComposeStore.getState().openCompose();
@@ -66,26 +68,9 @@ export default function MailboxPage() {
           <Sidebar onCompose={handleCompose} />
         </aside>
 
-        {/* Mail list */}
-        <div className="flex-1 min-w-0 flex">
-          <div
-            className={`${
-              selectedMailId ? "hidden md:flex" : "flex"
-            } flex-col w-full md:w-[360px] lg:w-[420px] md:border-r md:shrink-0`}
-          >
-            <MailList />
-          </div>
-
-          {/* Mail detail */}
-          {selectedMailId ? (
-            <div className="flex-1 min-w-0 flex flex-col">
-              <MailDetail />
-            </div>
-          ) : (
-            <div className="hidden md:flex flex-1 items-center justify-center text-muted-foreground">
-              <p>Select a message to read</p>
-            </div>
-          )}
+        {/* Content area — list or detail, never both */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          {selectedMailId ? <MailDetail /> : <MailList />}
         </div>
       </div>
       <ComposeMail />

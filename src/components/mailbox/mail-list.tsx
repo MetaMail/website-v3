@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useMailStore } from "@/lib/store/mail";
@@ -17,9 +17,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Inbox,
-  Loader2,
   ChevronLeft,
   ChevronRight,
   Trash2,
@@ -30,6 +30,10 @@ import {
   Filter,
   Lock,
   Mail,
+  Send,
+  FileText,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { FilterType } from "@/lib/constants";
 
@@ -81,6 +85,28 @@ function getPageNumbers(
   return pages;
 }
 
+const emptyStateConfig: Record<string, { icon: React.ElementType; message: string }> = {
+  [FilterType.Inbox]: { icon: Inbox, message: "Your inbox is empty — new messages will appear here" },
+  [FilterType.Sent]: { icon: Send, message: "Messages you send will appear here" },
+  [FilterType.Draft]: { icon: FileText, message: "Click Compose to start a new draft" },
+  [FilterType.Starred]: { icon: Star, message: "Star important messages to find them here" },
+  [FilterType.Trash]: { icon: Trash2, message: "Deleted messages will appear here" },
+  [FilterType.Spam]: { icon: AlertCircle, message: "Spam messages will appear here" },
+};
+
+function EmptyState({ filter }: { filter: FilterType }) {
+  const config = emptyStateConfig[filter] || { icon: Inbox, message: `No messages in ${filterLabels[filter].toLowerCase()}` };
+  const Icon = config.icon;
+
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+      <Icon className="h-12 w-12 mb-4 opacity-40" />
+      <p className="text-lg font-medium">No messages</p>
+      <p className="text-sm">{config.message}</p>
+    </div>
+  );
+}
+
 export function MailList() {
   const {
     filter,
@@ -104,8 +130,16 @@ export function MailList() {
     emptyTrash,
   } = useMailStore();
 
+  const [refreshing, setRefreshing] = useState(false);
+
   const hasSelection = selectedIds.size > 0;
   const allSelected = mails.length > 0 && mails.every((m) => selectedIds.has(m.message_id));
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchMails(), fetchStats()]);
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     fetchMails();
@@ -124,141 +158,169 @@ export function MailList() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b min-h-[52px]">
-        {hasSelection ? (
-          <>
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={allSelected}
-                onCheckedChange={() => (allSelected ? clearSelection() : selectAll())}
-                className="h-4 w-4"
-              />
-              <span className="text-sm font-medium">
-                {selectedIds.size} selected
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={clearSelection}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-            <div className="flex items-center gap-0.5">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={batchDelete}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  {filter === FilterType.Trash ? "Delete Forever" : "Trash"}
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={batchStar}>
-                    <Star className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Star</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={batchMarkRead}>
-                    <MailCheck className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Mark Read</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={batchMarkUnread}>
-                    <MailOpen className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Mark Unread</TooltipContent>
-              </Tooltip>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={false}
-                onCheckedChange={() => selectAll()}
-                className="h-4 w-4"
-              />
-              <h2 className="text-lg font-semibold">{filterLabels[filter]}</h2>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <Filter className="h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {quickFilters.map((qf) => (
-                    <DropdownMenuItem
-                      key={qf.filter}
-                      onClick={() => setFilter(qf.filter)}
-                      className={filter === qf.filter ? "font-semibold" : ""}
-                    >
-                      <qf.icon className="h-4 w-4 mr-2" />
-                      {qf.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            <div className="flex items-center gap-2">
-              {filter === FilterType.Trash && mails.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={emptyTrash}
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                  Empty Trash
+      <div className="relative px-4 py-3 border-b min-h-[52px]">
+        {/* Batch toolbar — fades in when items are selected */}
+        <div
+          className={`flex items-center justify-between transition-opacity duration-150 ${
+            hasSelection ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={allSelected}
+              onCheckedChange={() => (allSelected ? clearSelection() : selectAll())}
+              className="h-4 w-4"
+              aria-label={allSelected ? "Deselect all" : "Select all"}
+            />
+            <span className="text-sm font-medium" aria-live="polite" aria-atomic="true">
+              {selectedIds.size} selected
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              aria-label="Clear selection"
+              onClick={clearSelection}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex items-center gap-0.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={filter === FilterType.Trash ? "Delete forever" : "Move to trash"} onClick={batchDelete}>
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-              )}
-              {total > 0 && (
-                <span className="text-sm text-muted-foreground">
-                  {total} {total === 1 ? "message" : "messages"}
-                </span>
-              )}
-            </div>
-          </>
-        )}
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {filter === FilterType.Trash ? "Delete Forever" : "Trash"}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Star selected" onClick={batchStar}>
+                  <Star className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Star</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Mark as read" onClick={batchMarkRead}>
+                  <MailCheck className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Mark Read</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Mark as unread" onClick={batchMarkUnread}>
+                  <MailOpen className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Mark Unread</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+        {/* Normal header — fades in when no selection */}
+        <div
+          className={`absolute inset-0 flex items-center justify-between px-4 py-3 transition-opacity duration-150 ${
+            hasSelection ? "opacity-0 pointer-events-none" : "opacity-100"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={false}
+              onCheckedChange={() => selectAll()}
+              className="h-4 w-4"
+              aria-label="Select all messages"
+            />
+            <h2 className="text-lg font-semibold">{filterLabels[filter]}</h2>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Filter messages">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {quickFilters.map((qf) => (
+                  <DropdownMenuItem
+                    key={qf.filter}
+                    onClick={() => setFilter(qf.filter)}
+                    className={filter === qf.filter ? "font-semibold" : ""}
+                  >
+                    <qf.icon className="h-4 w-4 mr-2" />
+                    {qf.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="flex items-center gap-2">
+            {filter === FilterType.Trash && mails.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={emptyTrash}
+              >
+                <Trash2 className="h-4 w-4 mr-1.5" />
+                Empty Trash
+              </Button>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Refresh"
+                  disabled={refreshing}
+                  onClick={handleRefresh}
+                >
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Refresh</TooltipContent>
+            </Tooltip>
+            {total > 0 && (
+              <span className="text-sm text-muted-foreground">
+                {total} {total === 1 ? "message" : "messages"}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Mail list */}
       <ScrollArea className="flex-1">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b">
+                <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <Skeleton className="h-3.5 w-28" />
+                  <Skeleton className="h-3.5 w-48" />
+                </div>
+                <Skeleton className="h-3 w-12 shrink-0" />
+              </div>
+            ))}
           </div>
         ) : mails.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Inbox className="h-12 w-12 mb-4 opacity-40" />
-            <p className="text-lg font-medium">No messages</p>
-            <p className="text-sm">
-              {filter === FilterType.Inbox
-                ? "Your inbox is empty"
-                : `No messages in ${filterLabels[filter].toLowerCase()}`}
-            </p>
-          </div>
+          <EmptyState filter={filter} />
         ) : (
-          mails.map((mail) => (
-            <MailListItem
-              key={mail.message_id}
-              mail={mail}
-              isChecked={selectedIds.has(mail.message_id)}
-              hasSelection={hasSelection}
-              onToggleSelect={() => toggleSelect(mail.message_id)}
-            />
-          ))
+          <div className="animate-in fade-in duration-200">
+            {mails.map((mail) => (
+              <MailListItem
+                key={mail.message_id}
+                mail={mail}
+                isChecked={selectedIds.has(mail.message_id)}
+                hasSelection={hasSelection}
+                onToggleSelect={() => toggleSelect(mail.message_id)}
+              />
+            ))}
+          </div>
         )}
       </ScrollArea>
 
@@ -273,6 +335,7 @@ export function MailList() {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
+              aria-label="Previous page"
               disabled={pageIndex <= 1}
               onClick={() => setPage(pageIndex - 1)}
             >
@@ -299,6 +362,7 @@ export function MailList() {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
+              aria-label="Next page"
               disabled={pageIndex >= pageCount}
               onClick={() => setPage(pageIndex + 1)}
             >

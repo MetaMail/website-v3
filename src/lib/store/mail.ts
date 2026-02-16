@@ -9,6 +9,47 @@ import {
 } from "@/lib/constants";
 import { mailApi } from "@/lib/api/mail";
 
+// ── LRU cache for mail detail (module-scoped, not in Zustand state) ──
+
+class LruCache<T> {
+  private map = new Map<string, T>();
+  constructor(private maxSize: number) {}
+
+  get(key: string): T | undefined {
+    const value = this.map.get(key);
+    if (value !== undefined) {
+      // Move to end (most recently used)
+      this.map.delete(key);
+      this.map.set(key, value);
+    }
+    return value;
+  }
+
+  set(key: string, value: T): void {
+    this.map.delete(key);
+    this.map.set(key, value);
+    if (this.map.size > this.maxSize) {
+      // Evict least recently used (first key)
+      const oldest = this.map.keys().next().value!;
+      this.map.delete(oldest);
+    }
+  }
+
+  delete(key: string): void {
+    this.map.delete(key);
+  }
+}
+
+const detailCache = new LruCache<MailDetail>(50);
+
+// ── Types ──
+
+interface CachedPage {
+  mails: MailItem[];
+  pageCount: number;
+  total: number;
+}
+
 interface MailState {
   // Filters & pagination
   filter: FilterType;
@@ -18,7 +59,8 @@ interface MailState {
 
   // Mail list
   mails: MailItem[];
-  loading: boolean;
+  loading: boolean; // true only when no cached data to show
+  mailCache: Record<string, CachedPage>;
 
   // Stats
   unreadCount: number;
@@ -63,6 +105,7 @@ export const useMailStore = create<MailState>((set, get) => ({
   total: 0,
   mails: [],
   loading: false,
+  mailCache: {},
   unreadCount: 0,
   spamCount: 0,
   draftCount: 0,
@@ -72,31 +115,65 @@ export const useMailStore = create<MailState>((set, get) => ({
   selectedIds: new Set<string>(),
 
   setFilter: (filter) => {
-    set({ filter, pageIndex: 1, selectedMailId: null, selectedMailDetail: null, selectedIds: new Set() });
+    const cacheKey = `${filter}:1`;
+    const cached = get().mailCache[cacheKey];
+    set({
+      filter,
+      pageIndex: 1,
+      selectedMailId: null,
+      selectedMailDetail: null,
+      selectedIds: new Set(),
+      // Show cached data immediately if available
+      ...(cached ? { mails: cached.mails, pageCount: cached.pageCount, total: cached.total } : {}),
+    });
     get().fetchMails();
   },
 
   setPage: (page) => {
-    set({ pageIndex: page, selectedIds: new Set() });
+    const cacheKey = `${get().filter}:${page}`;
+    const cached = get().mailCache[cacheKey];
+    set({
+      pageIndex: page,
+      selectedIds: new Set(),
+      ...(cached ? { mails: cached.mails, pageCount: cached.pageCount, total: cached.total } : {}),
+    });
     get().fetchMails();
   },
 
   fetchMails: async () => {
-    const { filter, pageIndex } = get();
-    set({ loading: true });
+    const { filter, pageIndex, mailCache } = get();
+    const cacheKey = `${filter}:${pageIndex}`;
+    const hasCached = !!mailCache[cacheKey];
+
+    // Only show loading skeleton when there's no cached data to display
+    if (!hasCached) {
+      set({ loading: true });
+    }
+
     try {
       const res = await mailApi.getMailList(filter, pageIndex);
-      set({
+      const page: CachedPage = {
         mails: res.mails || [],
         pageCount: res.page_num,
         total: res.total,
+      };
+
+      set((state) => ({
+        mails: page.mails,
+        pageCount: page.pageCount,
+        total: page.total,
         selectedIds: new Set(),
-      });
+        loading: false,
+        mailCache: { ...state.mailCache, [cacheKey]: page },
+      }));
     } catch (err) {
       console.error("Failed to fetch mails:", err);
-      set({ mails: [] });
-    } finally {
-      set({ loading: false });
+      // Only clear mails if there was no cache (avoid blanking a stale view)
+      if (!hasCached) {
+        set({ mails: [], loading: false });
+      } else {
+        set({ loading: false });
+      }
     }
   },
 
@@ -119,7 +196,7 @@ export const useMailStore = create<MailState>((set, get) => ({
       return;
     }
 
-    // Check if this is a draft — if so, open in compose mode
+    // Check if this is a draft — if so, open in compose mode (never cached)
     const mail = get().mails.find((m) => m.message_id === messageId);
     if (mail && mail.mailbox === MailBoxType.Draft) {
       set({ detailLoading: true });
@@ -127,9 +204,7 @@ export const useMailStore = create<MailState>((set, get) => ({
         const results = await mailApi.batchGetMails([messageId]);
         const detail = results?.[0];
         if (!detail) throw new Error("Draft not found");
-        // Import compose store dynamically to avoid circular deps
         const { useComposeStore } = await import("./compose");
-        // walletClient is required to decrypt the draft
         const { getWalletClient } = await import("wagmi/actions");
         const { wagmiConfig } = await import("@/config/wagmi");
         const walletClient = await getWalletClient(wagmiConfig);
@@ -142,14 +217,25 @@ export const useMailStore = create<MailState>((set, get) => ({
       return;
     }
 
+    // Check LRU cache first — non-draft content doesn't change
+    const cached = detailCache.get(messageId);
+    if (cached) {
+      set({ selectedMailId: messageId, selectedMailDetail: cached, detailLoading: false });
+      if (mail && mail.read === ReadStatus.Unread) {
+        get().markAsRead(mail);
+      }
+      return;
+    }
+
     set({ selectedMailId: messageId, detailLoading: true });
     try {
       const results = await mailApi.batchGetMails([messageId]);
       const detail = results?.[0];
       if (!detail) throw new Error("Mail not found");
+
+      detailCache.set(messageId, detail);
       set({ selectedMailDetail: detail, detailLoading: false });
 
-      // Mark as read if unread
       if (mail && mail.read === ReadStatus.Unread) {
         get().markAsRead(mail);
       }
@@ -165,12 +251,15 @@ export const useMailStore = create<MailState>((set, get) => ({
         [{ message_id: mail.message_id, mailbox: mail.mailbox }],
         { read: ReadStatus.Read }
       );
-      // Update local state
       set((state) => ({
         mails: state.mails.map((m) =>
           m.message_id === mail.message_id ? { ...m, read: ReadStatus.Read } : m
         ),
         unreadCount: Math.max(0, state.unreadCount - 1),
+        selectedMailDetail:
+          state.selectedMailDetail?.message_id === mail.message_id
+            ? { ...state.selectedMailDetail, read: ReadStatus.Read }
+            : state.selectedMailDetail,
       }));
     } catch (err) {
       console.error("Failed to mark as read:", err);
@@ -188,6 +277,10 @@ export const useMailStore = create<MailState>((set, get) => ({
           m.message_id === mail.message_id ? { ...m, read: ReadStatus.Unread } : m
         ),
         unreadCount: state.unreadCount + 1,
+        selectedMailDetail:
+          state.selectedMailDetail?.message_id === mail.message_id
+            ? { ...state.selectedMailDetail, read: ReadStatus.Unread }
+            : state.selectedMailDetail,
       }));
     } catch (err) {
       console.error("Failed to mark as unread:", err);
@@ -206,6 +299,10 @@ export const useMailStore = create<MailState>((set, get) => ({
         mails: state.mails.map((m) =>
           m.message_id === mail.message_id ? { ...m, mark: newMark } : m
         ),
+        selectedMailDetail:
+          state.selectedMailDetail?.message_id === mail.message_id
+            ? { ...state.selectedMailDetail, mark: newMark }
+            : state.selectedMailDetail,
       }));
     } catch (err) {
       console.error("Failed to toggle star:", err);
@@ -221,6 +318,7 @@ export const useMailStore = create<MailState>((set, get) => ({
         [{ message_id: mail.message_id, mailbox: mail.mailbox }],
         { mark }
       );
+      detailCache.delete(mail.message_id);
       set((state) => ({
         mails: state.mails.filter((m) => m.message_id !== mail.message_id),
         total: state.total - 1,
@@ -232,6 +330,7 @@ export const useMailStore = create<MailState>((set, get) => ({
           state.selectedMailId === mail.message_id
             ? null
             : state.selectedMailDetail,
+        mailCache: {},
       }));
       get().fetchStats();
     } catch (err) {
@@ -245,7 +344,7 @@ export const useMailStore = create<MailState>((set, get) => ({
         [{ message_id: mail.message_id, mailbox: mail.mailbox }],
         { mark }
       );
-      // Remove from current list
+      detailCache.delete(mail.message_id);
       set((state) => ({
         mails: state.mails.filter((m) => m.message_id !== mail.message_id),
         total: state.total - 1,
@@ -257,6 +356,7 @@ export const useMailStore = create<MailState>((set, get) => ({
           state.selectedMailId === mail.message_id
             ? null
             : state.selectedMailDetail,
+        mailCache: {},
       }));
       get().fetchStats();
     } catch (err) {
@@ -300,12 +400,14 @@ export const useMailStore = create<MailState>((set, get) => ({
 
     try {
       await mailApi.updateMailStatus(updates, { mark });
+      Array.from(selectedIds).forEach((id) => detailCache.delete(id));
       set((state) => ({
         mails: state.mails.filter((m) => !selectedIds.has(m.message_id)),
         total: Math.max(0, state.total - targets.length),
         selectedIds: new Set(),
         selectedMailId: selectedIds.has(state.selectedMailId || "") ? null : state.selectedMailId,
         selectedMailDetail: selectedIds.has(state.selectedMailId || "") ? null : state.selectedMailDetail,
+        mailCache: {},
       }));
       get().fetchStats();
     } catch (err) {
@@ -420,6 +522,7 @@ export const useMailStore = create<MailState>((set, get) => ({
         selectedIds: new Set(),
         selectedMailId: null,
         selectedMailDetail: null,
+        mailCache: {},
       });
       get().fetchMails();
       get().fetchStats();

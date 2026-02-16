@@ -65,7 +65,7 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
       className={cn(
         "group flex items-center gap-3 px-4 py-3 cursor-pointer border-b transition-colors hover:bg-muted/50",
         isSelected && "bg-muted",
-        isUnread && "bg-blue-50/50"
+        isUnread && "border-l-2 border-l-blue-500 pl-[14px]"
       )}
       onClick={() => selectMail(mail.message_id)}
     >
@@ -83,12 +83,14 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
           onCheckedChange={() => onToggleSelect()}
           onClick={(e) => e.stopPropagation()}
           className="h-4 w-4"
+          aria-label={`Select mail from ${getSenderDisplay(mail)}`}
         />
       </div>
 
       {/* Star */}
       <button
-        className="shrink-0"
+        className="shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        aria-label={isStarred ? "Unstar" : "Star"}
         onClick={(e) => {
           e.stopPropagation();
           toggleStar(mail);
@@ -110,23 +112,20 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
           <span
             className={cn(
               "text-sm truncate",
-              isUnread ? "font-semibold" : "font-normal text-muted-foreground"
+              isUnread ? "font-semibold text-foreground" : "font-normal text-muted-foreground"
             )}
           >
             {getSenderDisplay(mail)}
           </span>
           {isEncrypted && (
-            <Lock className="h-3 w-3 shrink-0 text-green-600" />
-          )}
-          {isUnread && (
-            <div className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+            <Lock className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
           )}
         </div>
         <div className="flex items-center gap-2">
           <span
             className={cn(
               "text-sm truncate",
-              isUnread ? "font-medium" : "text-muted-foreground"
+              isUnread ? "font-medium text-foreground" : "text-muted-foreground"
             )}
           >
             {mail.subject || "(No Subject)"}
@@ -134,24 +133,28 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
         </div>
       </div>
 
-      {/* Date & actions */}
-      <div className="flex items-center gap-1 shrink-0">
-        <span className="text-xs text-muted-foreground group-hover:hidden">
+      {/* Date & actions — overlay in same space with opacity transitions */}
+      <div className="relative flex items-center shrink-0">
+        <span className={cn(
+          "text-xs opacity-100 group-hover:opacity-0 transition-opacity duration-150",
+          isUnread ? "font-medium text-foreground" : "text-muted-foreground"
+        )}>
           {formatDate(mail.mail_date)}
         </span>
-        <div className="hidden group-hover:flex items-center gap-0.5">
+        <div className="absolute right-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
                 className={`h-7 w-7 ${filter === FilterType.Trash ? "text-destructive hover:text-destructive" : ""}`}
+                aria-label={filter === FilterType.Trash ? "Delete Forever" : "Trash"}
                 onClick={(e) => {
                   e.stopPropagation();
                   deleteMail(mail);
                 }}
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -165,12 +168,13 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7"
+                  aria-label="Spam"
                   onClick={(e) => {
                     e.stopPropagation();
                     useMailStore.getState().moveTo(mail, MarkType.Spam);
                   }}
                 >
-                  <AlertCircle className="h-3.5 w-3.5" />
+                  <AlertCircle className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">Spam</TooltipContent>

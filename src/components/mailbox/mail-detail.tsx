@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { useMailStore } from "@/lib/store/mail";
 import { useAuthStore } from "@/lib/store/auth";
 import { useComposeStore } from "@/lib/store/compose";
-import { MetaMailType, MarkType, FilterType } from "@/lib/constants";
+import { MetaMailType, MarkType, FilterType, ReadStatus } from "@/lib/constants";
 import { decryptMail, decryptAttachment } from "@/lib/crypto";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
   Loader2,
@@ -24,6 +25,8 @@ import {
   Reply,
   Forward,
   MailOpen,
+  MailCheck,
+  X,
 } from "lucide-react";
 
 function formatFullDate(dateStr: string): string {
@@ -109,6 +112,7 @@ export function MailDetail() {
     selectMail,
     toggleStar,
     deleteMail,
+    markAsRead,
     markAsUnread,
   } = useMailStore();
 
@@ -230,15 +234,7 @@ export function MailDetail() {
     }
   };
 
-  if (detailLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!mail) {
+  if (!mail && !detailLoading) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
         <p>Select a message to read</p>
@@ -246,32 +242,35 @@ export function MailDetail() {
     );
   }
 
-  const isStarred = mail.mark === MarkType.Starred;
+  const isStarred = mail?.mark === MarkType.Starred;
 
   // Determine what content to show
-  const displayHtml = isEncrypted ? decryptedHtml : mail.part_html;
-  const displayText = isEncrypted ? decryptedText : mail.part_text;
+  const displayHtml = isEncrypted ? decryptedHtml : mail?.part_html;
+  const displayText = isEncrypted ? decryptedText : mail?.part_text;
   const needsDecryption = isEncrypted && !hasDecryptedContent && !decrypting;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar */}
+      {/* Toolbar — always static */}
       <div className="flex items-center gap-2 px-4 py-2 border-b">
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden h-8 w-8"
+          className="h-8 w-8"
+          aria-label="Back to mail list"
           onClick={() => selectMail(null)}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
+        <div className="flex-1" />
         <Button
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          title="Reply"
+          aria-label="Reply"
+          disabled={!mail}
           onClick={() =>
-            useComposeStore
+            mail && useComposeStore
               .getState()
               .openCompose({ mode: "reply", replyTo: mail })
           }
@@ -282,30 +281,45 @@ export function MailDetail() {
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          title="Forward"
+          aria-label="Forward"
+          disabled={!mail}
           onClick={() =>
-            useComposeStore
+            mail && useComposeStore
               .getState()
               .openCompose({ mode: "forward", replyTo: mail })
           }
         >
           <Forward className="h-4 w-4" />
         </Button>
-        <div className="flex-1" />
+        {mail?.read === ReadStatus.Unread ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Mark as read"
+            onClick={() => mail && markAsRead(mail)}
+          >
+            <MailCheck className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Mark as unread"
+            disabled={!mail}
+            onClick={() => mail && markAsUnread(mail)}
+          >
+            <MailOpen className="h-4 w-4" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          title="Mark Unread"
-          onClick={() => markAsUnread(mail)}
-        >
-          <MailOpen className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => toggleStar(mail)}
+          aria-label={isStarred ? "Unstar" : "Star"}
+          disabled={!mail}
+          onClick={() => mail && toggleStar(mail)}
         >
           <Star
             className={
@@ -319,8 +333,9 @@ export function MailDetail() {
           variant="ghost"
           size="icon"
           className={`h-8 w-8 ${filter === FilterType.Trash ? "text-destructive hover:text-destructive" : ""}`}
-          title={filter === FilterType.Trash ? "Delete Forever" : "Move to Trash"}
-          onClick={() => deleteMail(mail)}
+          aria-label={filter === FilterType.Trash ? "Delete forever" : "Move to trash"}
+          disabled={!mail}
+          onClick={() => mail && deleteMail(mail)}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -329,15 +344,44 @@ export function MailDetail() {
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => useMailStore.getState().moveTo(mail, MarkType.Spam)}
+            aria-label="Report spam"
+            disabled={!mail}
+            onClick={() => mail && useMailStore.getState().moveTo(mail, MarkType.Spam)}
           >
             <AlertCircle className="h-4 w-4" />
           </Button>
         )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          aria-label="Close"
+          onClick={() => selectMail(null)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Mail content */}
-      <ScrollArea className="flex-1">
+      {/* Mail content — skeleton while loading, real content when ready */}
+      {detailLoading ? (
+        <div className="p-6 max-w-3xl space-y-4">
+          <Skeleton className="h-6 w-3/4" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-56" />
+            <Skeleton className="h-4 w-44" />
+            <Skeleton className="h-4 w-36" />
+          </div>
+          <Skeleton className="h-px w-full" />
+          <div className="space-y-3 pt-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        </div>
+      ) : mail ? (
+      <ScrollArea key={mail.message_id} className="flex-1 animate-in fade-in duration-200">
         <div className="p-6 max-w-3xl">
           {/* Subject */}
           <div className="flex items-start gap-3 mb-4">
@@ -347,7 +391,7 @@ export function MailDetail() {
             {isEncrypted && (
               <Badge
                 variant="outline"
-                className="shrink-0 gap-1 text-green-700 border-green-300"
+                className="shrink-0 gap-1 text-green-700 border-green-300 dark:text-green-400 dark:border-green-700"
               >
                 <Lock className="h-3 w-3" />
                 Encrypted
@@ -474,6 +518,7 @@ export function MailDetail() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 shrink-0"
+                        aria-label={`Download ${att.filename}`}
                         disabled={
                           downloadingId === att.attachment_id ||
                           (isEncrypted && !decryptedRandomBits)
@@ -494,6 +539,7 @@ export function MailDetail() {
           )}
         </div>
       </ScrollArea>
+      ) : null}
     </div>
   );
 }

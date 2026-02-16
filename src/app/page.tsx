@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/landing/header";
 import { Hero } from "@/components/landing/hero";
@@ -13,16 +13,20 @@ import { useAuthStore } from "@/lib/store/auth";
 export default function Home() {
   const router = useRouter();
   const { loadFromStorage, token } = useAuthStore();
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     loadFromStorage();
+    setHydrated(true);
   }, [loadFromStorage]);
 
   useEffect(() => {
-    if (token) {
+    if (hydrated && token) {
       router.replace("/mailbox");
     }
-  }, [token, router]);
+  }, [hydrated, token, router]);
+
+  if (!hydrated) return null;
 
   return (
     <LoginProvider>

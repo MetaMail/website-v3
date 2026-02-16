@@ -135,13 +135,14 @@ export function ComposeMail() {
       }`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-muted/50 rounded-t-lg shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 bg-muted/50 rounded-t-lg shrink-0">
         <h3 className="text-sm font-semibold">{modeLabel}</h3>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7"
+            aria-label={isExpanded ? "Minimize" : "Maximize"}
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? (
@@ -154,6 +155,7 @@ export function ComposeMail() {
             variant="ghost"
             size="icon"
             className="h-7 w-7"
+            aria-label="Close compose"
             onClick={closeCompose}
           >
             <X className="h-3.5 w-3.5" />
@@ -165,9 +167,9 @@ export function ComposeMail() {
 
       {/* Wallet connect banner */}
       {!walletClient && (
-        <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
-          <AlertCircle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-          <span className="text-xs text-amber-800 flex-1">
+        <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 flex items-center gap-2">
+          <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span className="text-xs text-amber-800 dark:text-amber-200 flex-1">
             Connect your wallet to save drafts and send mail.
           </span>
           <ConnectButton.Custom>
@@ -287,7 +289,7 @@ export function ComposeMail() {
       <Separator />
 
       {/* Footer */}
-      <div className="px-4 py-2.5 flex items-center gap-2 shrink-0">
+      <div className="px-4 py-2 flex items-center gap-2 shrink-0">
         {walletClient ? (
           <Button
             onClick={handleSend}
@@ -316,6 +318,7 @@ export function ComposeMail() {
           variant="ghost"
           size="icon"
           className="h-8 w-8"
+          aria-label="Attach file"
           onClick={() => fileInputRef.current?.click()}
           disabled={sending}
         >
