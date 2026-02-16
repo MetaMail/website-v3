@@ -1,0 +1,183 @@
+"use client";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { MailItem, MarkType, MetaMailType, ReadStatus, FilterType } from "@/lib/constants";
+import { useMailStore } from "@/lib/store/mail";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Star, Lock, Trash2, AlertCircle } from "lucide-react";
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  const isThisYear = date.getFullYear() === now.getFullYear();
+  if (isThisYear) {
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+
+  return date.toLocaleDateString([], {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function getSenderDisplay(mail: MailItem): string {
+  if (mail.mail_from.name) return mail.mail_from.name;
+  const addr = mail.mail_from.address;
+  if (addr.includes("@")) {
+    const local = addr.split("@")[0];
+    if (local.startsWith("0x") && local.length > 12) {
+      return `${local.slice(0, 6)}...${local.slice(-4)}`;
+    }
+    return local;
+  }
+  return addr;
+}
+
+interface MailListItemProps {
+  mail: MailItem;
+  isChecked: boolean;
+  hasSelection: boolean;
+  onToggleSelect: () => void;
+}
+
+export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: MailListItemProps) {
+  const { selectedMailId, selectMail, toggleStar, deleteMail, filter } = useMailStore();
+  const isSelected = selectedMailId === mail.message_id;
+  const isUnread = mail.read === ReadStatus.Unread;
+  const isStarred = mail.mark === MarkType.Starred;
+  const isEncrypted = mail.meta_type === MetaMailType.Encrypted;
+
+  return (
+    <div
+      className={cn(
+        "group flex items-center gap-3 px-4 py-3 cursor-pointer border-b transition-colors hover:bg-muted/50",
+        isSelected && "bg-muted",
+        isUnread && "bg-blue-50/50"
+      )}
+      onClick={() => selectMail(mail.message_id)}
+    >
+      {/* Checkbox — visible on hover or when any selection is active */}
+      <div
+        className={cn(
+          "shrink-0 w-4 flex items-center justify-center transition-opacity",
+          hasSelection || isChecked
+            ? "opacity-100"
+            : "opacity-0 group-hover:opacity-100"
+        )}
+      >
+        <Checkbox
+          checked={isChecked}
+          onCheckedChange={() => onToggleSelect()}
+          onClick={(e) => e.stopPropagation()}
+          className="h-4 w-4"
+        />
+      </div>
+
+      {/* Star */}
+      <button
+        className="shrink-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleStar(mail);
+        }}
+      >
+        <Star
+          className={cn(
+            "h-4 w-4 transition-colors",
+            isStarred
+              ? "fill-yellow-400 text-yellow-400"
+              : "text-muted-foreground/40 hover:text-yellow-400"
+          )}
+        />
+      </button>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span
+            className={cn(
+              "text-sm truncate",
+              isUnread ? "font-semibold" : "font-normal text-muted-foreground"
+            )}
+          >
+            {getSenderDisplay(mail)}
+          </span>
+          {isEncrypted && (
+            <Lock className="h-3 w-3 shrink-0 text-green-600" />
+          )}
+          {isUnread && (
+            <div className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "text-sm truncate",
+              isUnread ? "font-medium" : "text-muted-foreground"
+            )}
+          >
+            {mail.subject || "(No Subject)"}
+          </span>
+        </div>
+      </div>
+
+      {/* Date & actions */}
+      <div className="flex items-center gap-1 shrink-0">
+        <span className="text-xs text-muted-foreground group-hover:hidden">
+          {formatDate(mail.mail_date)}
+        </span>
+        <div className="hidden group-hover:flex items-center gap-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-7 w-7 ${filter === FilterType.Trash ? "text-destructive hover:text-destructive" : ""}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteMail(mail);
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {filter === FilterType.Trash ? "Delete Forever" : "Trash"}
+            </TooltipContent>
+          </Tooltip>
+          {filter !== FilterType.Trash && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    useMailStore.getState().moveTo(mail, MarkType.Spam);
+                  }}
+                >
+                  <AlertCircle className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Spam</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
