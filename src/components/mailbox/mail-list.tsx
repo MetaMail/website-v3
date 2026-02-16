@@ -210,7 +210,12 @@ export function MailList() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchMails(), fetchStats()]);
+    // Ensure spin lasts at least 600ms so it doesn't stop abruptly
+    await Promise.all([
+      fetchMails(),
+      fetchStats(),
+      new Promise((r) => setTimeout(r, 600)),
+    ]);
     setRefreshing(false);
   };
 
@@ -413,14 +418,15 @@ export function MailList() {
       <ScrollArea className="flex-1">
         {loading ? (
           <div>
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3 border-b">
-                <Skeleton className="h-4 w-4 rounded-full shrink-0" />
-                <div className="flex-1 min-w-0 space-y-2">
-                  <Skeleton className="h-3.5 w-28" />
+                <Skeleton className="h-4 w-4 shrink-0" />
+                <Skeleton className="h-4 w-4 shrink-0" />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <Skeleton className="h-3.5 w-32" />
                   <Skeleton className="h-3.5 w-48" />
                 </div>
-                <Skeleton className="h-3 w-12 shrink-0" />
+                <Skeleton className="h-3 w-14 shrink-0" />
               </div>
             ))}
           </div>

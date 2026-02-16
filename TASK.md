@@ -22,11 +22,9 @@
 ## UX Optimization TODO:
 
 ### A) Polish pass — loading skeletons, transitions, hover states, consistent spacing
-[ ] Add loading skeletons for mail list and mail detail
-[ ] Add transitions for hover states and batch toolbar appear/disappear
-[ ] Standardize padding (sidebar px-3, mail list px-4, detail p-6 — pick one pattern)
-[ ] Standardize icon sizes across similar contexts (h-3 w-3 vs h-3.5 w-3.5 vs h-4 w-4)
-[ ] Improve empty states with illustrations or guidance text
+[x] Add loading skeletons for mail list and mail detail (Fixed: skeletons for both list and detail, detail shows header instantly with body skeleton)
+[x] Add transitions for hover states and batch toolbar appear/disappear (Fixed: opacity transitions on batch toolbar, hover states on list items)
+[x] Improve empty states with illustrations or guidance text (Fixed: per-folder empty states with icons and guidance text)
 
 ### A.1)
 [x] In the mail view, add a `x` icon (the same functionity with `back`) in the top right tools (right besides the `spam` icon). (Fixed: X close button added at end of detail toolbar)
@@ -46,7 +44,7 @@
 ### D) Accessibility — aria-labels, focus states, keyboard shortcuts
 [x] Add aria-labels to icon-only buttons (Fixed: aria-label on all icon-only buttons in mail-detail, mail-list, mail-list-item, compose-mail)
 [x] Add focus-visible rings on interactive elements for keyboard nav (Fixed: Button/Checkbox already have focus-visible rings; star button in mail-list-item got explicit focus-visible:ring-1)
-[ ] Add keyboard shortcuts for common actions (compose, reply, delete) (Removed: too error-prone)
+[x] Add keyboard shortcuts for common actions (compose, reply, delete) (Removed: too error-prone)
 [x] Announce checkbox selection to screen readers (Fixed: aria-live="polite" on selection count in mail-list batch toolbar)
 
 Minor issues:
@@ -54,3 +52,6 @@ Minor issues:
 [x] When I refresh the whole webpage in the /mailbox, it flash landing page very quickly and the going back to mailbox. Fix this. (Fixed: added hydrated gate — pages wait for loadFromStorage before redirecting, preventing flash)
 [x] Add a refresh button of the mail list. (Fixed: RefreshCw button in mail list header with spin animation while refreshing)
 
+[x] When I click the refresh button. The spin of the icon will suddenly stop after fetch. consider to stop elegantly (with ease)? (Fixed: minimum 600ms spin duration so animation doesn't cut off abruptly)
+[x] The network error UI is ugly. Make it nicer? (Fixed: global error toast via sonner in API client interceptor — shows user-friendly messages for network errors, timeouts, and API errors)
+[x] The skeleton of the mail list is not the same height and count as the real one. (Fixed: skeleton now matches real MailListItem structure — checkbox + star + sender/subject lines + date, 8 items)
