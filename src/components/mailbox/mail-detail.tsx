@@ -364,7 +364,7 @@ export function MailDetail() {
 
       {/* Mail content — skeleton while loading, real content when ready */}
       {detailLoading ? (
-        <div className="p-6 max-w-3xl space-y-4">
+        <div className="p-6 max-w-3xl mx-auto space-y-4">
           <Skeleton className="h-6 w-3/4" />
           <div className="space-y-2">
             <Skeleton className="h-4 w-56" />
@@ -382,7 +382,7 @@ export function MailDetail() {
         </div>
       ) : mail ? (
       <ScrollArea key={mail.message_id} className="flex-1 animate-in fade-in duration-200">
-        <div className="p-6 max-w-3xl">
+        <div className="p-6 max-w-3xl mx-auto">
           {/* Subject */}
           <div className="flex items-start gap-3 mb-4">
             <h1 className="text-xl font-semibold flex-1">
