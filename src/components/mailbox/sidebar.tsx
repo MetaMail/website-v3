@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,8 @@ import {
   Trash2,
   AlertCircle,
   LogOut,
+  Copy,
+  Check,
 } from "lucide-react";
 import { MetaMailLogo } from "@/components/metamail-logo";
 import { useRouter } from "next/navigation";
@@ -65,11 +67,20 @@ export function Sidebar({ onCompose, className }: SidebarProps) {
     if (user) fetchProfile();
   }, [user, fetchProfile]);
 
+  const [copied, setCopied] = useState(false);
   const counts = { unreadCount, spamCount, draftCount };
 
   const displayAddress = user
     ? user.ensName || `${user.address.slice(0, 6)}...${user.address.slice(-4)}`
     : "";
+  const fullEmail = displayAddress ? `${displayAddress}@${EMAIL_DOMAIN}` : "";
+
+  const handleCopyEmail = async () => {
+    if (!fullEmail) return;
+    await navigator.clipboard.writeText(fullEmail);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
 
   const handleLogout = () => {
     disconnect();
@@ -107,9 +118,18 @@ export function Sidebar({ onCompose, className }: SidebarProps) {
           <MetaMailLogo size={24} />
           <span className="font-bold text-lg">MetaMail</span>
         </div>
-        <p className="text-sm text-muted-foreground truncate mb-4">
-          {displayAddress}@{EMAIL_DOMAIN}
-        </p>
+        <button
+          onClick={handleCopyEmail}
+          className="group flex items-center gap-1.5 text-sm text-muted-foreground truncate mb-4 hover:text-foreground transition-colors cursor-pointer"
+          title="Copy email address"
+        >
+          <span className="truncate">{fullEmail}</span>
+          {copied ? (
+            <Check className="h-3 w-3 shrink-0 text-green-500" />
+          ) : (
+            <Copy className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+          )}
+        </button>
         <Button onClick={onCompose} className="w-full gap-2">
           <FileEdit className="h-4 w-4" />
           Compose

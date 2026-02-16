@@ -44,6 +44,7 @@ interface ComposeState {
   mailBcc: PersonItem[];
   subject: string;
   bodyText: string;
+  bodyHtml: string;
   randomBits: string;
   attachments: ComposeAttachment[];
   sending: boolean;
@@ -63,6 +64,8 @@ interface ComposeState {
   setMailBcc: (bcc: PersonItem[]) => void;
   setSubject: (subject: string) => void;
   setBodyText: (text: string) => void;
+  setBodyHtml: (html: string) => void;
+  setBody: (html: string, text: string) => void;
   addAttachment: (file: File) => Promise<void>;
   removeAttachment: (index: number) => void;
   saveDraft: (walletClient: WalletClient) => Promise<void>;
@@ -120,6 +123,7 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
   mailBcc: [],
   subject: "",
   bodyText: "",
+  bodyHtml: "",
   randomBits: "",
   attachments: [],
   sending: false,
@@ -147,6 +151,7 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
         mailBcc: [],
         subject: buildReplySubject(mail.subject),
         bodyText: "",
+        bodyHtml: "",
         randomBits: rb,
         attachments: [],
         sending: false,
@@ -168,6 +173,7 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
         mailBcc: [],
         subject: buildForwardSubject(mail.subject),
         bodyText: mail.part_text || "",
+        bodyHtml: mail.part_html || "",
         randomBits: rb,
         attachments: [],
         sending: false,
@@ -188,6 +194,7 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
         mailBcc: [],
         subject: "",
         bodyText: "",
+        bodyHtml: "",
         randomBits: rb,
         attachments: [],
         sending: false,
@@ -204,6 +211,7 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
     if (!user) throw new Error("Not logged in");
 
     let bodyText = "";
+    let bodyHtml = "";
     let rb = "";
 
     const hasEncryptionKeys =
@@ -218,6 +226,9 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
         privateKey,
         mail.meta_header.encryption_public_keys![0]
       );
+      if (mail.part_html) {
+        bodyHtml = decryptMailContent(mail.part_html, rb);
+      }
       if (mail.part_text) {
         bodyText = decryptMailContent(mail.part_text, rb);
       }
@@ -254,6 +265,7 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
       mailBcc: mail.mail_bcc || [],
       subject: mail.subject || "",
       bodyText,
+      bodyHtml,
       randomBits: rb,
       attachments,
       sending: false,
@@ -285,6 +297,8 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
   setMailBcc: (bcc) => set({ mailBcc: bcc, isDirty: true }),
   setSubject: (subject) => set({ subject, isDirty: true }),
   setBodyText: (text) => set({ bodyText: text, isDirty: true }),
+  setBodyHtml: (html) => set({ bodyHtml: html, isDirty: true }),
+  setBody: (html, text) => set({ bodyHtml: html, bodyText: text, isDirty: true }),
 
   addAttachment: async (file) => {
     const state = get();
@@ -316,6 +330,9 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
         const encryptedText = s.bodyText
           ? encryptMailContent(s.bodyText, s.randomBits)
           : undefined;
+        const encryptedHtml = s.bodyHtml
+          ? encryptMailContent(s.bodyHtml, s.randomBits)
+          : undefined;
         const res = await mailApi.createOrUpdateDraft({
           mail_from: from,
           mail_to: s.mailTo,
@@ -323,6 +340,7 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
           mail_bcc: s.mailBcc,
           subject: s.subject,
           part_text: encryptedText,
+          part_html: encryptedHtml,
           meta_type: MetaMailType.Encrypted,
         });
         messageId = res.message_id;
@@ -403,6 +421,9 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
       const encryptedText = state.bodyText
         ? encryptMailContent(state.bodyText, state.randomBits)
         : undefined;
+      const encryptedHtml = state.bodyHtml
+        ? encryptMailContent(state.bodyHtml, state.randomBits)
+        : undefined;
 
       const metaHeader = await buildDraftMetaHeader(
         state.randomBits,
@@ -418,6 +439,7 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
         mail_bcc: state.mailBcc,
         subject: state.subject,
         part_text: encryptedText,
+        part_html: encryptedHtml,
         meta_type: MetaMailType.Encrypted,
         meta_header: metaHeader,
         ...(state.inReplyTo ? { in_reply_to: state.inReplyTo } : {}),
@@ -450,7 +472,9 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
       const encryptedText = state.bodyText
         ? encryptMailContent(state.bodyText, state.randomBits)
         : "";
-      const encryptedHtml = "";
+      const encryptedHtml = state.bodyHtml
+        ? encryptMailContent(state.bodyHtml, state.randomBits)
+        : "";
 
       // 2. Save draft with meta_header
       const metaHeader = await buildDraftMetaHeader(

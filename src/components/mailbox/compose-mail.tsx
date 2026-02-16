@@ -5,7 +5,7 @@ import { useWalletClient } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "./rich-text-editor";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { RecipientInput } from "./recipient-input";
@@ -45,7 +45,7 @@ export function ComposeMail() {
     mailCc,
     mailBcc,
     subject,
-    bodyText,
+    bodyHtml,
     attachments,
     sending,
     saving,
@@ -56,7 +56,7 @@ export function ComposeMail() {
     setMailCc,
     setMailBcc,
     setSubject,
-    setBodyText,
+    setBody,
     addAttachment,
     removeAttachment,
     sendMail,
@@ -245,11 +245,10 @@ export function ComposeMail() {
         </div>
 
         {/* Body */}
-        <Textarea
-          value={bodyText}
-          onChange={(e) => setBodyText(e.target.value)}
+        <RichTextEditor
+          content={bodyHtml}
+          onChange={setBody}
           placeholder="Write your message..."
-          className="min-h-[120px] resize-none flex-1 text-sm"
         />
 
         {/* Attachments */}

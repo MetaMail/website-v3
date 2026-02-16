@@ -42,6 +42,9 @@ class LruCache<T> {
 
 const detailCache = new LruCache<MailDetail>(50);
 
+// Counter to detect stale fetch responses (e.g. rapid page clicks)
+let fetchSeq = 0;
+
 // ── Types ──
 
 interface CachedPage {
@@ -192,10 +195,17 @@ export const useMailStore = create<MailState>((set, get) => ({
       set({ loading: true });
     }
 
+    // Track this request so stale responses (from rapid page clicks) are discarded
+    const seq = ++fetchSeq;
+
     try {
       const res = searchQuery
         ? await mailApi.searchMails(searchQuery, filter, pageIndex)
         : await mailApi.getMailList(filter, pageIndex);
+
+      // Discard if a newer fetch was started while we were waiting
+      if (seq !== fetchSeq) return;
+
       const page: CachedPage = {
         mails: res.mails || [],
         pageCount: res.page_num,
@@ -211,6 +221,9 @@ export const useMailStore = create<MailState>((set, get) => ({
         mailCache: { ...state.mailCache, [cacheKey]: page },
       }));
     } catch (err) {
+      // Discard if stale
+      if (seq !== fetchSeq) return;
+
       console.error("Failed to fetch mails:", err);
       // Only clear mails if there was no cache (avoid blanking a stale view)
       if (!hasCached) {

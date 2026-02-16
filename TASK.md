@@ -56,4 +56,8 @@ Minor issues:
 [x] The network error UI is ugly. Make it nicer? (Fixed: global error toast via sonner in API client interceptor — shows user-friendly messages for network errors, timeouts, and API errors)
 [x] The skeleton of the mail list is not the same height and count as the real one. (Fixed: skeleton now matches real MailListItem structure — checkbox + star + sender/subject lines + date, 8 items)
 
-[] The checkbox in the mail list is blue. I think it should keep the same color and style as other icon.
+[x] The checkbox in the mail list is blue. I think it should keep the same color and style as other icon. (Fixed: checkbox border/checked colors changed from primary to foreground/muted-foreground)
+[x] Don't need to show the total messages on the top right. We already shown that in the botton. (Fixed: removed total messages count from mail list header)
+[x] When I click different pages very quick. It will flash back previous pages when the previous loading is done. You need to add chek to prevent this. (Fixed: added fetch sequence counter to discard stale responses)
+[x] The hint of all the icon's are blue. We don't want primary color for that. (Fixed: tooltip bg changed from bg-primary to bg-foreground)
+[x] The "To" text in the compose mail is a littl smaller than other text, fix that. (Fixed: RecipientInput container height/padding matched to Input component)

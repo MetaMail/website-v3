@@ -136,6 +136,7 @@ export function MailList() {
   } = useMailStore();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [spinDecel, setSpinDecel] = useState(false);
   const [localQuery, setLocalQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -210,6 +211,7 @@ export function MailList() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    setSpinDecel(false);
     // Ensure spin lasts at least 600ms so it doesn't stop abruptly
     await Promise.all([
       fetchMails(),
@@ -217,6 +219,9 @@ export function MailList() {
       new Promise((r) => setTimeout(r, 600)),
     ]);
     setRefreshing(false);
+    // Play one final ease-out rotation before fully stopping
+    setSpinDecel(true);
+    setTimeout(() => setSpinDecel(false), 600);
   };
 
   useEffect(() => {
@@ -400,16 +405,11 @@ export function MailList() {
                   disabled={refreshing}
                   onClick={handleRefresh}
                 >
-                  <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : spinDecel ? "animate-spin-decel" : ""}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">Refresh</TooltipContent>
             </Tooltip>
-            {total > 0 && (
-              <span className="text-sm text-muted-foreground">
-                {total} {total === 1 ? "message" : "messages"}
-              </span>
-            )}
           </div>
         </div>
       </div>

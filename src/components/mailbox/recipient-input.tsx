@@ -107,7 +107,7 @@ export function RecipientInput({
 
   return (
     <div className="relative">
-      <div className="flex flex-wrap gap-1 items-center min-h-[36px] rounded-md border border-input bg-background px-2 py-1 focus-within:ring-1 focus-within:ring-ring">
+      <div className="flex flex-wrap gap-1 items-center min-h-8 rounded-md border border-input bg-background px-3 py-1 focus-within:ring-1 focus-within:ring-ring">
         {recipients.map((r, i) => (
           <span
             key={i}
