@@ -17,9 +17,9 @@ import {
   Star,
   Trash2,
   AlertCircle,
-  Mail,
   LogOut,
 } from "lucide-react";
+import { MetaMailLogo } from "@/components/metamail-logo";
 import { useRouter } from "next/navigation";
 import { useDisconnect } from "wagmi";
 import type { LucideIcon } from "lucide-react";
@@ -104,7 +104,7 @@ export function Sidebar({ onCompose, className }: SidebarProps) {
       {/* User info */}
       <div className="p-4">
         <div className="flex items-center gap-2 mb-4">
-          <Mail className="h-5 w-5" />
+          <MetaMailLogo size={24} />
           <span className="font-bold text-lg">MetaMail</span>
         </div>
         <p className="text-sm text-muted-foreground truncate mb-4">
