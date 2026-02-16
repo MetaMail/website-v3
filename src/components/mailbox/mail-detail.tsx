@@ -362,8 +362,8 @@ export function MailDetail() {
         </Button>
       </div>
 
-      {/* Mail content — skeleton while loading, real content when ready */}
-      {detailLoading ? (
+      {/* Mail content */}
+      {!mail && detailLoading ? (
         <div className="p-6 max-w-3xl mx-auto space-y-4">
           <Skeleton className="h-6 w-3/4" />
           <div className="space-y-2">
@@ -424,6 +424,17 @@ export function MailDetail() {
           </div>
 
           <Separator className="mb-6" />
+
+          {/* Body loading skeleton */}
+          {detailLoading && (
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-4/5" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          )}
 
           {/* Decryption prompt */}
           {needsDecryption && (

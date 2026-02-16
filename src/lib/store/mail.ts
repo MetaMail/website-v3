@@ -271,7 +271,12 @@ export const useMailStore = create<MailState>((set, get) => ({
       return;
     }
 
-    set({ selectedMailId: messageId, detailLoading: true });
+    // Show mail header immediately from list data while body loads
+    set({
+      selectedMailId: messageId,
+      selectedMailDetail: mail ? (mail as MailDetail) : null,
+      detailLoading: true,
+    });
     try {
       const results = await mailApi.batchGetMails([messageId]);
       const detail = results?.[0];
