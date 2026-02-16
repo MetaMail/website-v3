@@ -422,11 +422,11 @@ export function MailList() {
               <div key={i} className="flex items-center gap-3 px-4 py-3 border-b">
                 <Skeleton className="h-4 w-4 shrink-0" />
                 <Skeleton className="h-4 w-4 shrink-0" />
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <Skeleton className="h-3.5 w-32" />
-                  <Skeleton className="h-3.5 w-48" />
+                <div className="flex-1 min-w-0">
+                  <Skeleton className="h-4 w-32 mb-1.5" />
+                  <Skeleton className="h-4 w-48" />
                 </div>
-                <Skeleton className="h-3 w-14 shrink-0" />
+                <Skeleton className="h-3.5 w-14 shrink-0" />
               </div>
             ))}
           </div>
