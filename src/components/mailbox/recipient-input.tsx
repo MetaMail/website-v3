@@ -11,12 +11,14 @@ interface RecipientInputProps {
   recipients: PersonItem[];
   onChange: (recipients: PersonItem[]) => void;
   placeholder?: string;
+  borderless?: boolean;
 }
 
 export function RecipientInput({
   recipients,
   onChange,
   placeholder = "Add recipient...",
+  borderless = false,
 }: RecipientInputProps) {
   const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -107,7 +109,7 @@ export function RecipientInput({
 
   return (
     <div className="relative">
-      <div className="flex flex-wrap gap-1 items-center min-h-8 rounded-md border border-input bg-background px-3 py-1 focus-within:ring-1 focus-within:ring-ring">
+      <div className={`flex flex-wrap gap-1 items-center ${borderless ? "" : "min-h-8 rounded-md border border-input bg-background px-3 py-1 focus-within:ring-1 focus-within:ring-ring"}`}>
         {recipients.map((r, i) => (
           <span
             key={i}

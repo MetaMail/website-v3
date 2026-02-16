@@ -61,3 +61,5 @@ Minor issues:
 [x] When I click different pages very quick. It will flash back previous pages when the previous loading is done. You need to add chek to prevent this. (Fixed: added fetch sequence counter to discard stale responses)
 [x] The hint of all the icon's are blue. We don't want primary color for that. (Fixed: tooltip bg changed from bg-primary to bg-foreground)
 [x] The "To" text in the compose mail is a littl smaller than other text, fix that. (Fixed: RecipientInput container height/padding matched to Input component)
+
+[] Hower the iten in the mail list should have effect.

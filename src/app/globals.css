@@ -90,13 +90,13 @@
   }
 }
 
-/* Refresh spin deceleration */
-@keyframes spin-decel {
+/* Refresh spin with gentle deceleration */
+@keyframes spin-ease-out {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-.animate-spin-decel {
-  animation: spin-decel 0.6s ease-out;
+.animate-spin-ease-out {
+  animation: spin-ease-out 1s ease-out forwards;
 }
 
 /* Tiptap editor styles */

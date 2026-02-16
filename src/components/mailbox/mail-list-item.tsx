@@ -67,7 +67,7 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
         isSelected && "bg-muted",
         isUnread && "border-l-2 border-l-blue-500 pl-[14px]"
       )}
-      onClick={() => selectMail(mail.message_id)}
+      onClick={() => selectMail(mail.message_id, mail.mailbox)}
     >
       {/* Checkbox — visible on hover or when any selection is active */}
       <div

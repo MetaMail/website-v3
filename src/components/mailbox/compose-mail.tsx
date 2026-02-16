@@ -4,25 +4,26 @@ import { useRef, useState, useEffect } from "react";
 import { useWalletClient } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "./rich-text-editor";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { RecipientInput } from "./recipient-input";
 import { useComposeStore } from "@/lib/store/compose";
 import { useAuthStore } from "@/lib/store/auth";
 import { EMAIL_DOMAIN } from "@/lib/constants";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Send,
   Save,
   Paperclip,
   X,
   Loader2,
-  ChevronDown,
-  ChevronUp,
   AlertCircle,
   Maximize2,
   Minimize2,
+  Trash2,
 } from "lucide-react";
 
 function formatSize(bytes: number): string {
@@ -35,7 +36,8 @@ export function ComposeMail() {
   const { data: walletClient } = useWalletClient();
   const { user } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showCcBcc, setShowCcBcc] = useState(false);
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const {
@@ -61,6 +63,12 @@ export function ComposeMail() {
     removeAttachment,
     sendMail,
   } = useComposeStore();
+
+  // Auto-show Cc/Bcc rows if they already have recipients (e.g. from a draft)
+  useEffect(() => {
+    if (mailCc.length > 0) setShowCc(true);
+    if (mailBcc.length > 0) setShowBcc(true);
+  }, [mailCc.length, mailBcc.length]);
 
   // Auto-save every 3 seconds when dirty
   useEffect(() => {
@@ -163,8 +171,6 @@ export function ComposeMail() {
         </div>
       </div>
 
-      <Separator />
-
       {/* Wallet connect banner */}
       {!walletClient && (
         <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 flex items-center gap-2">
@@ -182,113 +188,128 @@ export function ComposeMail() {
         </div>
       )}
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {/* From */}
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">From</Label>
-          <Input value={fromAddress} disabled className="bg-muted h-8 text-sm" />
+      {/* Inline field rows */}
+      <div className="shrink-0">
+        {/* From row */}
+        <div className="flex items-center px-4 py-2 border-b">
+          <span className="w-16 text-sm text-muted-foreground shrink-0">From</span>
+          <span className="text-sm truncate">{fromAddress}</span>
         </div>
 
-        {/* To */}
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">To</Label>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-5 px-2 text-xs text-muted-foreground"
-              onClick={() => setShowCcBcc(!showCcBcc)}
-            >
-              Cc/Bcc
-              {showCcBcc ? (
-                <ChevronUp className="ml-1 h-3 w-3" />
-              ) : (
-                <ChevronDown className="ml-1 h-3 w-3" />
-              )}
-            </Button>
+        {/* To row */}
+        <div className="flex items-center px-4 py-2 border-b">
+          <span className="w-16 text-sm text-muted-foreground shrink-0">To</span>
+          <div className="flex-1 min-w-0">
+            <RecipientInput recipients={mailTo} onChange={setMailTo} borderless />
           </div>
-          <RecipientInput recipients={mailTo} onChange={setMailTo} />
+          <div className="flex items-center gap-1 ml-2 shrink-0">
+            <button
+              type="button"
+              className={`text-sm hover:text-foreground ${showCc ? "text-foreground" : "text-muted-foreground"}`}
+              onClick={() => {
+                if (showCc && mailCc.length > 0) return;
+                setShowCc(!showCc);
+              }}
+            >
+              Cc
+            </button>
+            <button
+              type="button"
+              className={`text-sm hover:text-foreground ${showBcc ? "text-foreground" : "text-muted-foreground"}`}
+              onClick={() => {
+                if (showBcc && mailBcc.length > 0) return;
+                setShowBcc(!showBcc);
+              }}
+            >
+              Bcc
+            </button>
+          </div>
         </div>
 
-        {/* Cc/Bcc */}
-        {showCcBcc && (
-          <>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Cc</Label>
+        {/* Cc row */}
+        {showCc && (
+          <div className="flex items-center px-4 py-2 border-b">
+            <span className="w-16 text-sm text-muted-foreground shrink-0">Cc</span>
+            <div className="flex-1 min-w-0">
               <RecipientInput
                 recipients={mailCc}
                 onChange={setMailCc}
                 placeholder="Add Cc..."
+                borderless
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Bcc</Label>
+          </div>
+        )}
+
+        {/* Bcc row */}
+        {showBcc && (
+          <div className="flex items-center px-4 py-2 border-b">
+            <span className="w-16 text-sm text-muted-foreground shrink-0">Bcc</span>
+            <div className="flex-1 min-w-0">
               <RecipientInput
                 recipients={mailBcc}
                 onChange={setMailBcc}
                 placeholder="Add Bcc..."
+                borderless
               />
             </div>
-          </>
+          </div>
         )}
 
-        {/* Subject */}
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Subject</Label>
-          <Input
+        {/* Subject row */}
+        <div className="flex items-center px-4 py-2 border-b">
+          <span className="w-16 text-sm text-muted-foreground shrink-0">Subject</span>
+          <input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Subject"
-            className="h-8 text-sm"
+            className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground"
           />
         </div>
+      </div>
 
-        {/* Body */}
+      {/* Editor area — fills remaining space */}
+      <div className="flex-1 overflow-y-auto min-h-0">
         <RichTextEditor
           content={bodyHtml}
           onChange={setBody}
           placeholder="Write your message..."
+          borderless
+          className="h-full flex flex-col"
         />
-
-        {/* Attachments */}
-        {attachments.length > 0 && (
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">
-              Attachments
-            </Label>
-            {attachments.map((att, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs"
-              >
-                <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
-                <span className="flex-1 truncate">{att.filename}</span>
-                <span className="text-muted-foreground shrink-0">
-                  {formatSize(att.size)}
-                </span>
-                {att.uploading && (
-                  <Loader2 className="h-3 w-3 animate-spin shrink-0" />
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 shrink-0"
-                  onClick={() => removeAttachment(i)}
-                  disabled={att.uploading}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
-      <Separator />
+      {/* Attachments — horizontal chips */}
+      {attachments.length > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2 border-t overflow-x-auto shrink-0">
+          {attachments.map((att, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs shrink-0"
+            >
+              <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
+              <span className="truncate max-w-[120px]">{att.filename}</span>
+              <span className="text-muted-foreground shrink-0">
+                {formatSize(att.size)}
+              </span>
+              {att.uploading && (
+                <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+              )}
+              <button
+                type="button"
+                className="hover:text-destructive shrink-0"
+                onClick={() => removeAttachment(i)}
+                disabled={att.uploading}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Footer */}
-      <div className="px-4 py-2 flex items-center gap-2 shrink-0">
+      <div className="px-4 py-2 flex items-center gap-2 border-t shrink-0">
         {walletClient ? (
           <Button
             onClick={handleSend}
@@ -313,16 +334,21 @@ export function ComposeMail() {
           </ConnectButton.Custom>
         )}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          aria-label="Attach file"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={sending}
-        >
-          <Paperclip className="h-3.5 w-3.5" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Attach file"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={sending}
+            >
+              <Paperclip className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">Attach file</TooltipContent>
+        </Tooltip>
         <input
           ref={fileInputRef}
           type="file"
@@ -330,6 +356,22 @@ export function ComposeMail() {
           className="hidden"
           onChange={handleFileChange}
         />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Discard"
+              onClick={closeCompose}
+              disabled={sending}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">Discard</TooltipContent>
+        </Tooltip>
 
         <div className="flex-1" />
 

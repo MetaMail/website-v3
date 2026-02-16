@@ -29,6 +29,7 @@ interface RichTextEditorProps {
   onChange: (html: string, text: string) => void;
   placeholder?: string;
   className?: string;
+  borderless?: boolean;
 }
 
 function ToolbarButton({
@@ -68,6 +69,7 @@ export function RichTextEditor({
   onChange,
   placeholder = "Write your message...",
   className,
+  borderless = false,
 }: RichTextEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -118,9 +120,9 @@ export function RichTextEditor({
   if (!editor) return null;
 
   return (
-    <div className={`border rounded-md overflow-hidden ${className || ""}`}>
+    <div className={`${borderless ? "" : "border rounded-md"} overflow-hidden ${className || ""}`}>
       {/* Toolbar */}
-      <div className="flex items-center gap-0.5 px-1.5 py-1 border-b bg-muted/30 flex-wrap">
+      <div className="flex items-center gap-0.5 px-1.5 py-1 border-b bg-muted/30 flex-wrap shrink-0">
         <ToolbarButton
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -208,7 +210,7 @@ export function RichTextEditor({
       </div>
 
       {/* Editor */}
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="flex-1 overflow-y-auto" />
     </div>
   );
 }

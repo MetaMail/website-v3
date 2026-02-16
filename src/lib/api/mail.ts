@@ -62,8 +62,10 @@ export const mailApi = {
     });
   },
 
-  batchGetMails(messageIds: string[]): Promise<MailDetail[]> {
-    return apiClient.post("/mails/batch", { message_ids: messageIds });
+  batchGetMails(messageIds: string[], mailbox?: MailBoxType): Promise<MailDetail[]> {
+    const body: Record<string, unknown> = { message_ids: messageIds };
+    if (mailbox !== undefined) body.mailbox = mailbox;
+    return apiClient.post("/mails/batch", body);
   },
 
   getMailStat(): Promise<MailStatResponse> {

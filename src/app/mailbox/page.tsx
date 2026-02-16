@@ -70,7 +70,10 @@ export default function MailboxPage() {
 
         {/* Content area — list or detail, never both */}
         <div className="flex-1 min-w-0 flex flex-col">
-          {selectedMailId ? <MailDetail /> : <MailList />}
+          <div className={selectedMailId ? "hidden" : "flex flex-col flex-1 min-h-0"}>
+            <MailList />
+          </div>
+          {selectedMailId && <MailDetail />}
         </div>
       </div>
       <ComposeMail />
