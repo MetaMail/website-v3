@@ -55,3 +55,5 @@ Minor issues:
 [x] When I click the refresh button. The spin of the icon will suddenly stop after fetch. consider to stop elegantly (with ease)? (Fixed: minimum 600ms spin duration so animation doesn't cut off abruptly)
 [x] The network error UI is ugly. Make it nicer? (Fixed: global error toast via sonner in API client interceptor — shows user-friendly messages for network errors, timeouts, and API errors)
 [x] The skeleton of the mail list is not the same height and count as the real one. (Fixed: skeleton now matches real MailListItem structure — checkbox + star + sender/subject lines + date, 8 items)
+
+[] The checkbox in the mail list is blue. I think it should keep the same color and style as other icon.
