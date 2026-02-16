@@ -38,6 +38,13 @@
     "wagmi": "^2.19.5",
     "zustand": "^5.0.11"
   },
+  "overrides": {
+    "@walletconnect/sign-client": "^2.23.5",
+    "@walletconnect/universal-provider": "^2.23.5",
+    "@paulmillr/qr": "^0.3.0",
+    "rimraf": "^6.0.0",
+    "glob": "^13.0.0"
+  },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^20",
