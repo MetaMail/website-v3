@@ -63,7 +63,7 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 px-4 py-3 cursor-pointer border-b transition-colors hover:bg-muted/50",
+        "group flex items-center gap-3 px-4 py-3 cursor-pointer border-b transition-colors hover:bg-muted",
         isSelected && "bg-muted",
         isUnread && "border-l-2 border-l-blue-500 pl-[14px]"
       )}
