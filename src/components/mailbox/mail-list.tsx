@@ -445,7 +445,7 @@ export function MailList() {
             <EmptyState filter={filter} />
           )
         ) : (
-          <div className="animate-in fade-in duration-200">
+          <div>
             {mails.map((mail) => (
               <MailListItem
                 key={mail.message_id}
