@@ -137,6 +137,7 @@ export function MailList() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [localQuery, setLocalQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -144,6 +145,9 @@ export function MailList() {
   useEffect(() => {
     if (searchQuery === "" && localQuery !== "") {
       setLocalQuery("");
+    }
+    if (searchQuery === "") {
+      setSearchOpen(false);
     }
   }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -181,6 +185,7 @@ export function MailList() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       setLocalQuery("");
       if (searchQuery) clearSearch();
+      setSearchOpen(false);
       inputRef.current?.blur();
     }
   };
@@ -189,7 +194,13 @@ export function MailList() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setLocalQuery("");
     clearSearch();
-    inputRef.current?.focus();
+    setSearchOpen(false);
+  };
+
+  const handleOpenSearch = () => {
+    setSearchOpen(true);
+    // Focus input after it renders
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   const isSearchMode = searchQuery !== "";
@@ -290,41 +301,77 @@ export function MailList() {
             hasSelection ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
         >
-          <div className="flex items-center gap-3">
-            <Checkbox
-              checked={false}
-              onCheckedChange={() => selectAll()}
-              className="h-4 w-4"
-              aria-label="Select all messages"
-            />
-            <h2 className="text-lg font-semibold">
-              {isSearchMode ? (
-                <>Search: &ldquo;{searchQuery}&rdquo;</>
-              ) : (
-                filterLabels[filter]
-              )}
-            </h2>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Filter messages">
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {quickFilters.map((qf) => (
-                  <DropdownMenuItem
-                    key={qf.filter}
-                    onClick={() => setFilter(qf.filter)}
-                    className={filter === qf.filter ? "font-semibold" : ""}
+          {/* Left side: either search input or title */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {searchOpen || isSearchMode ? (
+              <div className="relative flex-1 max-w-md animate-in fade-in slide-in-from-left-2 duration-200">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  ref={inputRef}
+                  value={localQuery}
+                  onChange={handleSearchChange}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search emails..."
+                  className="pl-9 pr-9 h-8"
+                />
+                {(localQuery || isSearchMode) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7"
+                    onClick={handleClearSearch}
+                    aria-label="Clear search"
                   >
-                    <qf.icon className="h-4 w-4 mr-2" />
-                    {qf.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <>
+                <Checkbox
+                  checked={false}
+                  onCheckedChange={() => selectAll()}
+                  className="h-4 w-4"
+                  aria-label="Select all messages"
+                />
+                <h2 className="text-lg font-semibold">{filterLabels[filter]}</h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Filter messages">
+                      <Filter className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {quickFilters.map((qf) => (
+                      <DropdownMenuItem
+                        key={qf.filter}
+                        onClick={() => setFilter(qf.filter)}
+                        className={filter === qf.filter ? "font-semibold" : ""}
+                      >
+                        <qf.icon className="h-4 w-4 mr-2" />
+                        {qf.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      aria-label="Search"
+                      onClick={handleOpenSearch}
+                    >
+                      <Search className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Search</TooltipContent>
+                </Tooltip>
+              </>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {filter === FilterType.Trash && mails.length > 0 && (
               <Button
                 variant="outline"
@@ -357,32 +404,6 @@ export function MailList() {
               </span>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Search bar */}
-      <div className="px-4 py-2 border-b">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            ref={inputRef}
-            value={localQuery}
-            onChange={handleSearchChange}
-            onKeyDown={handleSearchKeyDown}
-            placeholder="Search emails..."
-            className="pl-9 pr-9 h-8"
-          />
-          {localQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7"
-              onClick={handleClearSearch}
-              aria-label="Clear search"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
         </div>
       </div>
 
