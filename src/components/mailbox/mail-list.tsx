@@ -354,6 +354,7 @@ export function MailList() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+                {/* Search button — hidden until search API is ready
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -368,6 +369,7 @@ export function MailList() {
                   </TooltipTrigger>
                   <TooltipContent side="bottom">Search</TooltipContent>
                 </Tooltip>
+                */}
               </>
             )}
           </div>
