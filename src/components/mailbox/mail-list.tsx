@@ -197,11 +197,11 @@ export function MailList() {
     setSearchOpen(false);
   };
 
-  const handleOpenSearch = () => {
-    setSearchOpen(true);
-    // Focus input after it renders
-    requestAnimationFrame(() => inputRef.current?.focus());
-  };
+  // Uncomment when search API is ready
+  // const handleOpenSearch = () => {
+  //   setSearchOpen(true);
+  //   requestAnimationFrame(() => inputRef.current?.focus());
+  // };
 
   const isSearchMode = searchQuery !== "";
 
