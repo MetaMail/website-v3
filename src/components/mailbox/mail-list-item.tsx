@@ -10,7 +10,7 @@ import {
 import { MailItem, MarkType, MetaMailType, ReadStatus, FilterType } from "@/lib/constants";
 import { useMailStore } from "@/lib/store/mail";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, Lock, Trash2, AlertCircle } from "lucide-react";
+import { Star, ShieldCheck, Trash2, AlertCircle } from "lucide-react";
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
@@ -63,7 +63,7 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 px-4 py-3 cursor-pointer border-b transition-colors hover:bg-muted",
+        "group flex items-center gap-3 px-4 py-3 cursor-pointer border-b transition-colors hover:bg-accent",
         isSelected && "bg-muted",
         isUnread && "border-l-2 border-l-blue-500 pl-[14px]"
       )}
@@ -118,7 +118,10 @@ export function MailListItem({ mail, isChecked, hasSelection, onToggleSelect }: 
             {getSenderDisplay(mail)}
           </span>
           {isEncrypted && (
-            <Lock className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-green-100 px-1.5 py-px text-[10px] font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400">
+              <ShieldCheck className="h-3 w-3" />
+              E2E
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2">

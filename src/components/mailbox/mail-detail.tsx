@@ -6,7 +6,6 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { useMailStore } from "@/lib/store/mail";
 import { useAuthStore } from "@/lib/store/auth";
 import { useComposeStore } from "@/lib/store/compose";
@@ -21,7 +20,7 @@ import {
 import {
   ArrowLeft,
   Loader2,
-  Lock,
+  ShieldCheck,
   Star,
   Trash2,
   AlertCircle,
@@ -439,13 +438,10 @@ export function MailDetail() {
               {mail.subject || "(No Subject)"}
             </h1>
             {isEncrypted && (
-              <Badge
-                variant="outline"
-                className="shrink-0 gap-1 text-green-700 border-green-300 dark:text-green-400 dark:border-green-700"
-              >
-                <Lock className="h-3 w-3" />
-                Encrypted
-              </Badge>
+              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                End-to-End Encrypted
+              </span>
             )}
           </div>
 
@@ -490,7 +486,7 @@ export function MailDetail() {
           {needsDecryption && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                <Lock className="h-7 w-7 text-muted-foreground" />
+                <ShieldCheck className="h-7 w-7 text-muted-foreground" />
               </div>
               <p className="font-medium mb-1">This message is encrypted</p>
               <p className="text-sm text-muted-foreground mb-6">

@@ -20,10 +20,13 @@ import {
   LogOut,
   Copy,
   Check,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { MetaMailLogo } from "@/components/metamail-logo";
 import { useRouter } from "next/navigation";
 import { useDisconnect } from "wagmi";
+import { useTheme } from "next-themes";
 import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
@@ -62,6 +65,7 @@ export function Sidebar({ onCompose, className }: SidebarProps) {
   const { disconnect } = useDisconnect();
   const { filter, setFilter, unreadCount, spamCount, draftCount } = useMailStore();
   const { user, clearAuth, emailSize, emailSizeLimit, fetchProfile } = useAuthStore();
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     if (user) fetchProfile();
@@ -168,8 +172,17 @@ export function Sidebar({ onCompose, className }: SidebarProps) {
 
       <Separator />
 
-      {/* Logout */}
-      <div className="p-2">
+      {/* Footer actions */}
+      <div className="p-2 space-y-1">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-3 text-muted-foreground"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          <Sun className="h-4 w-4 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
+          {theme === "dark" ? "Light Mode" : "Dark Mode"}
+        </Button>
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground"

@@ -9,7 +9,7 @@ export function Hero() {
     <section className="relative overflow-hidden py-24 md:py-32 lg:py-40">
       {/* Background gradient */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-gradient-to-br from-blue-100 via-purple-50 to-transparent blur-3xl opacity-60" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-gradient-to-br from-blue-100 via-purple-50 to-transparent blur-3xl opacity-60 dark:from-blue-900/40 dark:via-purple-900/20 dark:to-transparent dark:opacity-50" />
       </div>
 
       <div className="container mx-auto px-4 md:px-6">
