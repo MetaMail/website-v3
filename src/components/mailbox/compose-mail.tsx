@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useWalletClient } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useModal } from "connectkit";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "./rich-text-editor";
 import { RecipientInput } from "./recipient-input";
@@ -29,6 +29,7 @@ import {
 
 
 export function ComposeMail() {
+  const { setOpen } = useModal();
   const { data: walletClient } = useWalletClient();
   const { user } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -174,13 +175,9 @@ export function ComposeMail() {
           <span className="text-xs text-amber-800 dark:text-amber-200 flex-1">
             Connect your wallet to save drafts and send mail.
           </span>
-          <ConnectButton.Custom>
-            {({ openConnectModal }) => (
-              <Button onClick={openConnectModal} size="sm" variant="outline" className="h-6 text-xs px-2">
-                Connect
-              </Button>
-            )}
-          </ConnectButton.Custom>
+          <Button onClick={() => setOpen(true)} size="sm" variant="outline" className="h-6 text-xs px-2">
+            Connect
+          </Button>
         </div>
       )}
 
@@ -321,13 +318,9 @@ export function ComposeMail() {
             {sending ? "Sending..." : "Send"}
           </Button>
         ) : (
-          <ConnectButton.Custom>
-            {({ openConnectModal }) => (
-              <Button onClick={openConnectModal} size="sm" className="gap-1.5">
-                Connect Wallet to Send
-              </Button>
-            )}
-          </ConnectButton.Custom>
+          <Button onClick={() => setOpen(true)} size="sm" className="gap-1.5">
+            Connect Wallet to Send
+          </Button>
         )}
 
         <Tooltip>

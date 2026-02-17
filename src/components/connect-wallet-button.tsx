@@ -1,6 +1,6 @@
 "use client";
 
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useModal } from "connectkit";
 import { Loader2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLoginState } from "@/components/login-provider";
@@ -19,6 +19,7 @@ export function ConnectWalletButton({
   className,
 }: ConnectWalletButtonProps) {
   const { step, error } = useLoginState();
+  const { setOpen } = useModal();
 
   if (step === "signing") {
     return (
@@ -40,19 +41,15 @@ export function ConnectWalletButton({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <ConnectButton.Custom>
-        {({ openConnectModal }) => (
-          <Button
-            size={size}
-            variant={variant}
-            className={className}
-            onClick={openConnectModal}
-          >
-            <Wallet className="h-4 w-4" />
-            {label}
-          </Button>
-        )}
-      </ConnectButton.Custom>
+      <Button
+        size={size}
+        variant={variant}
+        className={className}
+        onClick={() => setOpen(true)}
+      >
+        <Wallet className="h-4 w-4" />
+        {label}
+      </Button>
       {error && (
         <p className="text-sm text-destructive text-center max-w-xs">
           {error}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useWalletClient } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useModal } from "connectkit";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -110,6 +110,7 @@ interface MailDetailProps {
 }
 
 export function MailDetail({ onOpenSidebar }: MailDetailProps) {
+  const { setOpen } = useModal();
   const {
     selectedMailDetail: mail,
     detailLoading,
@@ -512,14 +513,10 @@ export function MailDetail({ onOpenSidebar }: MailDetailProps) {
                   Decrypt Message
                 </Button>
               ) : (
-                <ConnectButton.Custom>
-                  {({ openConnectModal }) => (
-                    <Button onClick={openConnectModal} className="gap-2">
-                      <KeyRound className="h-4 w-4" />
-                      Connect Wallet to Decrypt
-                    </Button>
-                  )}
-                </ConnectButton.Custom>
+                <Button onClick={() => setOpen(true)} className="gap-2">
+                  <KeyRound className="h-4 w-4" />
+                  Connect Wallet to Decrypt
+                </Button>
               )}
               {decryptError && (
                 <p className="text-sm text-destructive mt-4">{decryptError}</p>
