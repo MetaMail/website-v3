@@ -33,6 +33,9 @@ export function useLogin() {
       setStep("signing");
       const signData = await authApi.getRandomStrToSign(lowerAddress);
 
+      // Small delay for WalletConnect relay to stabilize on mobile
+      await new Promise((r) => setTimeout(r, 500));
+
       const primaryType = Object.keys(signData.signTypes)[0];
       const signedMessage = await walletClient.signTypedData({
         account: address,
@@ -79,16 +82,29 @@ export function useLogin() {
       router.push("/mailbox");
     } catch (err: unknown) {
       const error = err as { code?: string | number; message?: string };
+
+      // User rejected the request
       if (error.code === "ACTION_REJECTED" || error.code === 4001) {
+        setError("Signature rejected. Please try again.");
         setStep("idle");
         disconnect();
         return;
       }
+
       console.error("Login failed:", err);
-      setError(
-        error.message ||
-          "Login failed. Please make sure your wallet has ETH mainnet activity."
-      );
+
+      // Map common errors to user-friendly messages
+      let message = "Login failed. Please try again.";
+      const msg = error.message?.toLowerCase() || "";
+      if (msg.includes("timeout") || msg.includes("timed out")) {
+        message = "Request timed out. Please open MetaMask and try again.";
+      } else if (msg.includes("disconnected") || msg.includes("session")) {
+        message = "Wallet disconnected. Please reconnect and try again.";
+      } else if (msg.includes("network") || msg.includes("chain")) {
+        message = "Please switch to Ethereum mainnet and try again.";
+      }
+
+      setError(message);
       setStep("idle");
       disconnect();
     } finally {
