@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
+export const viewport = {
+  viewportFit: "cover" as const,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -473,7 +473,7 @@ export function MailList({ onOpenSidebar }: MailListProps) {
 
       {/* Pagination */}
       {pageCount > 1 && (
-        <div className="flex items-center justify-between px-4 py-2 border-t">
+        <div className="flex items-center justify-between px-4 py-2 border-t pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           <span className="text-sm text-muted-foreground">
             {(pageIndex - 1) * 30 + 1}&ndash;{Math.min(pageIndex * 30, total)} of {total}
           </span>
