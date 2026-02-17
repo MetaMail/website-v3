@@ -37,6 +37,7 @@ import {
   AlertCircle,
   RefreshCw,
   Search,
+  Menu,
 } from "lucide-react";
 import { FilterType } from "@/lib/constants";
 
@@ -110,7 +111,11 @@ function EmptyState({ filter }: { filter: FilterType }) {
   );
 }
 
-export function MailList() {
+interface MailListProps {
+  onOpenSidebar?: () => void;
+}
+
+export function MailList({ onOpenSidebar }: MailListProps) {
   const {
     filter,
     mails,
@@ -322,6 +327,17 @@ export function MailList() {
         >
           {/* Left side: either search input or title */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
+            {onOpenSidebar && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 md:hidden shrink-0"
+                aria-label="Open menu"
+                onClick={onOpenSidebar}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
             {searchOpen || isSearchMode ? (
               <div className="relative flex-1 max-w-md animate-in fade-in slide-in-from-left-2 duration-200">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

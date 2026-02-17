@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   ArrowLeft,
+  Menu,
   Loader2,
   ShieldCheck,
   Star,
@@ -104,7 +105,11 @@ a { color: #2563eb; }
   );
 }
 
-export function MailDetail() {
+interface MailDetailProps {
+  onOpenSidebar?: () => void;
+}
+
+export function MailDetail({ onOpenSidebar }: MailDetailProps) {
   const {
     selectedMailDetail: mail,
     detailLoading,
@@ -253,6 +258,17 @@ export function MailDetail() {
     <div className="flex flex-col h-full">
       {/* Toolbar — always static */}
       <div className="flex items-center gap-2 px-4 py-3 border-b min-h-[52px]">
+        {onOpenSidebar && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 md:hidden shrink-0"
+            aria-label="Open menu"
+            onClick={onOpenSidebar}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

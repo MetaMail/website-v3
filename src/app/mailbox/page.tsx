@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useAuthStore } from "@/lib/store/auth";
 import { useMailStore } from "@/lib/store/mail";
 import { useComposeStore } from "@/lib/store/compose";
@@ -13,7 +12,7 @@ import { MailList } from "@/components/mailbox/mail-list";
 import { MailDetail } from "@/components/mailbox/mail-detail";
 import { ComposeMail } from "@/components/mailbox/compose-mail";
 import { Toaster } from "@/components/ui/sonner";
-import { Menu } from "lucide-react";
+
 
 export default function MailboxPage() {
   const router = useRouter();
@@ -42,17 +41,8 @@ export default function MailboxPage() {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="h-screen flex">
-        {/* Mobile sidebar toggle */}
+        {/* Mobile sidebar */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="fixed top-3 left-3 z-50 md:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
           <SheetContent side="left" className="p-0 w-64">
             <Sidebar
               onCompose={() => {
@@ -71,9 +61,9 @@ export default function MailboxPage() {
         {/* Content area — list or detail, never both */}
         <div className="flex-1 min-w-0 flex flex-col">
           <div className={selectedMailId ? "hidden" : "flex flex-col flex-1 min-h-0"}>
-            <MailList />
+            <MailList onOpenSidebar={() => setSidebarOpen(true)} />
           </div>
-          {selectedMailId && <MailDetail />}
+          {selectedMailId && <MailDetail onOpenSidebar={() => setSidebarOpen(true)} />}
         </div>
       </div>
       <ComposeMail />
