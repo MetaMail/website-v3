@@ -40,7 +40,7 @@ export default function MailboxPage() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="h-screen flex">
+      <div className="h-dvh flex">
         {/* Mobile sidebar */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent side="left" className="p-0 w-64">
