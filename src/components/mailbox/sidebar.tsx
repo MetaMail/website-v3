@@ -50,11 +50,12 @@ const moreItems: NavItem[] = [
 
 interface SidebarProps {
   onCompose: () => void;
+  onNavigate?: () => void;
   className?: string;
 }
 
 
-export function Sidebar({ onCompose, className }: SidebarProps) {
+export function Sidebar({ onCompose, onNavigate, className }: SidebarProps) {
   const router = useRouter();
   const { disconnect } = useDisconnect();
   const { filter, setFilter, unreadCount, spamCount, draftCount } = useMailStore();
@@ -95,7 +96,7 @@ export function Sidebar({ onCompose, className }: SidebarProps) {
         key={item.label}
         variant={isActive ? "secondary" : "ghost"}
         className={cn("w-full justify-start gap-3", isActive && "font-semibold")}
-        onClick={() => setFilter(item.filter)}
+        onClick={() => { setFilter(item.filter); onNavigate?.(); }}
       >
         <item.icon className="h-4 w-4" />
         {item.label}
@@ -109,7 +110,7 @@ export function Sidebar({ onCompose, className }: SidebarProps) {
   };
 
   return (
-    <div className={cn("flex flex-col h-full", className)}>
+    <div className={cn("flex flex-col h-full pl-[env(safe-area-inset-left)] pb-[env(safe-area-inset-bottom)]", className)}>
       {/* User info */}
       <div className="p-4">
         <div className="flex items-center gap-2 mb-4">

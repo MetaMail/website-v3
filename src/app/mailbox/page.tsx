@@ -43,12 +43,13 @@ export default function MailboxPage() {
       <div className="h-dvh flex">
         {/* Mobile sidebar */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetContent side="left" className="p-0 w-64">
+          <SheetContent side="left" className="w-64">
             <Sidebar
               onCompose={() => {
                 setSidebarOpen(false);
                 handleCompose();
               }}
+              onNavigate={() => setSidebarOpen(false)}
             />
           </SheetContent>
         </Sheet>
