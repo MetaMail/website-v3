@@ -61,9 +61,11 @@ function SandboxedHtml({ html }: { html: string }) {
 
     // Listen for height messages from the iframe (since we can't access
     // contentDocument without allow-same-origin)
+    let lastHeight = 0;
     const handleMessage = (e: MessageEvent) => {
-      if (e.source === iframe.contentWindow && e.data?.type === "resize") {
-        iframe.style.height = `${e.data.height}px`;
+      if (e.source === iframe.contentWindow && e.data?.type === "resize" && e.data.height !== lastHeight) {
+        lastHeight = e.data.height;
+        iframe.style.height = `${e.data.height + 2}px`;
       }
     };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -17,9 +17,10 @@ import { Toaster } from "@/components/ui/sonner";
 export default function MailboxPage() {
   const router = useRouter();
   const { loadFromStorage, token } = useAuthStore();
-  const { selectedMailId } = useMailStore();
+  const { selectedMailId, selectMail } = useMailStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const prevMailId = useRef<string | null>(null);
 
   useEffect(() => {
     loadFromStorage();
@@ -31,6 +32,30 @@ export default function MailboxPage() {
       router.replace("/");
     }
   }, [hydrated, token, router]);
+
+  // Push history state when opening a mail, pop to go back to list
+  useEffect(() => {
+    if (selectedMailId && !prevMailId.current) {
+      window.history.pushState({ mail: true }, "");
+    }
+    if (!selectedMailId && prevMailId.current) {
+      // Mail was deselected programmatically (not via back button) — clean up
+      if (window.history.state?.mail) {
+        window.history.back();
+      }
+    }
+    prevMailId.current = selectedMailId;
+  }, [selectedMailId]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (useMailStore.getState().selectedMailId) {
+        selectMail(null);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [selectMail]);
 
   if (!hydrated || !token) return null;
 
